@@ -1,0 +1,16 @@
+{
+    "wifi": {
+        "ssid": "Obi-WLAN Kenobi",
+        "password": "ConnectToTheAP,IWill"
+    },
+    "mqtt": {
+        "protocol": "mqtt",
+        "broker_domain": "mymqttbroker.com",
+        "port": "1883",
+        "lwt_topic": "myTopic/",
+        "lwt_msg": "The MQTT Mailman unexpectedly disconnected.",
+        "qos": 0,
+        "retain_flag": 0,
+        "broker_certificate": ""
+    }
+}

@@ -1,0 +1,38 @@
+stages:
+  - validate
+  - compile
+
+compile_pio:
+  stage: compile
+  image:
+      name: registry.gitlab.sensirion.lokal/sensirion/docker/docker-arduino:0.6.0
+  tags: [docker, linux]
+  script:
+      - pio run
+
+syntax_check:
+  stage: validate
+  image:
+      name: registry.gitlab.sensirion.lokal/sensirion/docker/docker-ubuntu:22.04-1.6.0
+  tags: [linux, docker]
+  before_script:
+        - apt update
+        - apt-get install -yq clang-format-14
+  script:
+    - find . -type f -iregex ".*\.\(c\|h\|cpp\|ino\)" -exec clang-format-14 -i -style=file {} \; && git diff --exit-code
+
+cppcheck:
+  stage: validate
+  image:
+      name: registry.gitlab.sensirion.lokal/mso-sw/drivers/docker-driver-generator:0.2.0
+  tags: [linux, docker]
+  script:
+    - cppcheck --std=c++11 --language=c++ --error-exitcode=1 --enable=warning,style,performance,portability --suppressions-list=.cppcheck_suppressions.txt src/* examples/*
+
+TODO_check:
+  stage: validate
+  image:
+      name: registry.gitlab.sensirion.lokal/mso-sw/drivers/docker-driver-generator:0.2.0
+  tags: [linux, docker]
+  script:
+    - '! grep -rnw --exclude=.gitlab-ci.yml --exclude-dir=.git . -e "TODO"'
