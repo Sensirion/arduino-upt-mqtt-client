@@ -8,33 +8,66 @@
 */
 
 WiFiManager wifiMgr;
-MQTTMessageDispatcher mqttMailman;
+MqttMailingService mqttMailman;
 QueueHandle_t mailbox;
 int count = 0;
+
+const char* ssid = "yourssid";
+const char* password = "yourpass";
 const char ssl_cert[] =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
 
+unsigned long previousMillis = 0;
+unsigned long interval = 5000;
+
+void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+    Serial.println("Connected to AP successfully!");
+}
+
+void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+
+    mqttMailman.startMqttClient();
+}
+
+void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+    Serial.println("Disconnected from WiFi access point");
+    Serial.print("WiFi lost connection. Reason: ");
+    Serial.println(info.wifi_sta_disconnected.reason);
+    Serial.println("Trying to Reconnect");
+    WiFi.disconnect();
+    WiFi.reconnect();
+}
+
+void initializeWiFi() {
+    WiFi.disconnect(true);
+
+    delay(1000);
+
+    WiFi.onEvent(WiFiStationConnected,
+                 WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
+    WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
+    WiFi.onEvent(WiFiStationDisconnected,
+                 WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+}
+
 void setup() {
     Serial.begin(115200);
-    while (!Serial) {
-        delay(100);
-    }
+    delay(1000);
 
-    wifiMgr.start("mySSID", "myPassword");
-
-    mqttMailman.setBrokerURI("mqtt://mymqttbroker.com:1883");
-    // uncomment to configure  a certificate and enable SSL.
-    // mqttMailman.setSslCertificate(ssl_cert);
-    mqttMailman.start(wifiMgr.getEventGroupHandle());
+    initializeWiFi();
+    WiFi.begin(ssid, password);
+    mqttMailman.start("mqtt://mqtt.smartobjectserver.com:1883");
     mailbox = mqttMailman.getDataEventQueueHandle();
 }
 
-// Dump data into payload queue
 void loop() {
     MQTTMessage mail;
 
     // Set payload and topic
-    sprintf(mail.topic, "myTopic/");
+    sprintf(mail.topic, "testtopic/");
 
     switch (count % 4) {
         case 0:
@@ -54,10 +87,10 @@ void loop() {
 
     // Dispatch message
     if (xQueueSend(mailbox, &mail, 0) != pdPASS) {
-        Serial.println("Loop error:\tMQTT Payload queue is full, unable to add "
+        Serial.println("Loop error:\tMQTT Payload queue is full, unable to "
                        "payload. Data is lost!");
     }
 
     count++;
-    delay(5000);
+    delay(1000);
 }

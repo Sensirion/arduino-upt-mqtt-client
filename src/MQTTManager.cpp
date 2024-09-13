@@ -1,14 +1,14 @@
 #include "MQTTManager.h"
 #include "event_source.h"
 
-const char* MQTTMessageDispatcher::TAG = "MQTT Mailman";
-esp_mqtt_client_handle_t MQTTMessageDispatcher::_mqttClient = nullptr;
+const char* MqttMailingService::TAG = "MQTT Mail";
+esp_mqtt_client_handle_t MqttMailingService::_mqttClient = nullptr;
 
 const uint8_t ssl_cert[] =
     "------BEGIN CERTIFICATE-----\n" MQTT_BROKER_CERTIFICATE_OVERRIDE
     "\n-----END CERTIFICATE-----";
 
-MQTTMessageDispatcher::MQTTMessageDispatcher() {
+MqttMailingService::MqttMailingService() {
     strncpy(_brokerFullURI, MQTT_BROKER_FULL_URI_OVERRIDE, 64);
     strncpy(_lwtTopic, MQTT_LWT_TOPIC_OVERRIDE, 127);
     strncpy(_lwtMessage, MQTT_LWT_MSG_OVERRIDE, 255);
@@ -18,7 +18,7 @@ MQTTMessageDispatcher::MQTTMessageDispatcher() {
     _retainFlag = MQTT_RETAIN_FLAG_OVERRIDE;
 }
 
-MQTTMessageDispatcher::~MQTTMessageDispatcher() {
+MqttMailingService::~MqttMailingService() {
     if (_mailmanTaskHandle == nullptr) {
         _mailmanIsRunning = false;
         xTaskAbortDelay(_mailmanTaskHandle);
@@ -27,43 +27,21 @@ MQTTMessageDispatcher::~MQTTMessageDispatcher() {
     }
     destroyMqttClient();
     vQueueDelete(_mailbox);
-
-    if (_pWifiMgr) {
-        delete _pWifiMgr;
-    }
 }
 
-void MQTTMessageDispatcher::startWithWifiConnection(const char* ssid,
-                                                    const char* pwd) {
-    return startWithWifiConnection(ssid, pwd, _brokerFullURI);
+void MqttMailingService::start() {
+    return start(_brokerFullURI);
 }
 
-void MQTTMessageDispatcher::startWithWifiConnection(const char* ssid,
-                                                    const char* pwd,
-                                                    const char* full_uri) {
-    delete _pWifiMgr;
-    _pWifiMgr = new WiFiManager;
-    _pWifiMgr->start(ssid, pwd);
-    return start(_pWifiMgr->getEventGroupHandle(), full_uri);
-}
-
-void MQTTMessageDispatcher::start(EventGroupHandle_t wifiEventGroup) {
-    return start(wifiEventGroup, _brokerFullURI);
-}
-
-void MQTTMessageDispatcher::start(EventGroupHandle_t wifiEventGroup,
-                                  const char* fullURI) {
-    _wifiEventGroup = wifiEventGroup;
+void MqttMailingService::start(const char* fullURI) {
+    // _wifiEventGroup = wifiEventGroup;
     _mailbox = xQueueCreate(MQTT_DATAQUEUE_LEN, sizeof(MQTTMessage));
     setBrokerURI(fullURI);
 
     initMqttClient();
-
-    xTaskCreate(_wifiConnectionMonitor, "MQTTbaseTask", 5 * 1024,
-                reinterpret_cast<void*>(this), tskIDLE_PRIORITY + 1, NULL);
 }
 
-void MQTTMessageDispatcher::setBrokerURI(const char* brokerURI) {
+void MqttMailingService::setBrokerURI(const char* brokerURI) {
     if (strlen(brokerURI) > 64) {
         ESP_LOGW(TAG,
                  "Warning: requested broker URI \"%s\" is too long: %i "
@@ -73,7 +51,7 @@ void MQTTMessageDispatcher::setBrokerURI(const char* brokerURI) {
     strncpy(_brokerFullURI, brokerURI, 63);
 }
 
-void MQTTMessageDispatcher::setLWTTopic(const char* lwtTopic) {
+void MqttMailingService::setLWTTopic(const char* lwtTopic) {
     if (strlen(lwtTopic) > 128) {
         ESP_LOGW(TAG,
                  "Warning: requested LWT topic \"%s\" is too long: %i "
@@ -83,7 +61,7 @@ void MQTTMessageDispatcher::setLWTTopic(const char* lwtTopic) {
     strncpy(_lwtTopic, lwtTopic, 127);
 }
 
-void MQTTMessageDispatcher::setLWTMessage(const char* lwtMessage) {
+void MqttMailingService::setLWTMessage(const char* lwtMessage) {
     if (strlen(lwtMessage) > 256) {
         ESP_LOGW(TAG,
                  "Warning: requested LWT message \"%s\" is too long: %i "
@@ -93,16 +71,16 @@ void MQTTMessageDispatcher::setLWTMessage(const char* lwtMessage) {
     strncpy(_lwtMessage, lwtMessage, 255);
 }
 
-void MQTTMessageDispatcher::setSslCertificate(const char* sslCert) {
+void MqttMailingService::setSslCertificate(const char* sslCert) {
     _sslCert = sslCert;
     _useSsl = true;
 }
 
-void MQTTMessageDispatcher::setQOS(int qos) {
+void MqttMailingService::setQOS(int qos) {
     _qos = qos;
 }
 
-void MQTTMessageDispatcher::setRetainFlag(int retainFlag) {
+void MqttMailingService::setRetainFlag(int retainFlag) {
     if (retainFlag < 0 || retainFlag > 1) {
         ESP_LOGW(
             TAG,
@@ -114,7 +92,7 @@ void MQTTMessageDispatcher::setRetainFlag(int retainFlag) {
     }
 }
 
-void MQTTMessageDispatcher::startMqttClient() {
+void MqttMailingService::startMqttClient() {
     esp_err_t ret;
 
     if (_clientState == MQTT_STATE_CONNECTED ||
@@ -142,7 +120,7 @@ void MQTTMessageDispatcher::startMqttClient() {
     ESP_LOGI(TAG, "MQTT client started.");
 }
 
-void MQTTMessageDispatcher::stopMqttClient() {
+void MqttMailingService::stopMqttClient() {
     esp_err_t ret;
 
     if (_clientState == MQTT_STATE_INIT) {
@@ -159,7 +137,7 @@ void MQTTMessageDispatcher::stopMqttClient() {
     ESP_LOGI(TAG, "MQTT client stopped.");
 }
 
-void MQTTMessageDispatcher::initMqttClient() {
+void MqttMailingService::initMqttClient() {
     // Setup mqtt event loop
     esp_event_loop_args_t mqtt_loop_args = {.queue_size = MQTT_EVENT_LOOP_LEN,
                                             .task_name = "MQTT Event Loop",
@@ -190,7 +168,7 @@ void MQTTMessageDispatcher::initMqttClient() {
     ESP_LOGI(TAG, "MQTT client initialized.");
 }
 
-void MQTTMessageDispatcher::destroyMqttClient() {
+void MqttMailingService::destroyMqttClient() {
     _clientState = MQTT_STATE_UNINIT;
     esp_mqtt_client_stop(_mqttClient);
     esp_mqtt_client_destroy(_mqttClient);
@@ -198,15 +176,11 @@ void MQTTMessageDispatcher::destroyMqttClient() {
     ESP_LOGI(TAG, "MQTT client has been destroyed.");
 }
 
-QueueHandle_t MQTTMessageDispatcher::getDataEventQueueHandle() const {
+QueueHandle_t MqttMailingService::getDataEventQueueHandle() const {
     return _mailbox;
 }
 
-EventGroupHandle_t MQTTMessageDispatcher::getWifiEventGroupHandle() const {
-    return _wifiEventGroup;
-}
-
-esp_mqtt_client_handle_t MQTTMessageDispatcher::getMQTTClientHandle() const {
+esp_mqtt_client_handle_t MqttMailingService::getMQTTClientHandle() const {
     return _mqttClient;
 }
 
@@ -214,46 +188,8 @@ esp_mqtt_client_handle_t MQTTMessageDispatcher::getMQTTClientHandle() const {
  *   Private
  */
 
-void MQTTMessageDispatcher::_onWiFiConnected() {
-    // Start the task that should be running when connected.
-    startMqttClient();
-}
-
-void MQTTMessageDispatcher::_onWiFiDisconnected() {
-    // Stop the task
-    stopMqttClient();
-}
-
-void MQTTMessageDispatcher::_wifiConnectionMonitor(void* arg) {
-    MQTTMessageDispatcher* mqttMgr =
-        reinterpret_cast<MQTTMessageDispatcher*>(arg);
-    assert(mqttMgr->_wifiEventGroup);
-
-    while (1) {
-        EventBits_t wifiFlags = xEventGroupWaitBits(
-            mqttMgr->_wifiEventGroup, WIFI_GOT_IP_BIT | WIFI_LOST_IP_BIT,
-            pdFALSE, pdTRUE, 0);
-
-        bool wifiHasGotIp = ((wifiFlags & WIFI_GOT_IP_BIT) == WIFI_GOT_IP_BIT);
-        bool wifiHasLostIp =
-            ((wifiFlags & WIFI_LOST_IP_BIT) == WIFI_LOST_IP_BIT);
-
-        if (wifiHasGotIp && !wifiHasLostIp) {
-            mqttMgr->_onWiFiConnected();
-        } else if (!wifiHasGotIp && wifiHasLostIp) {
-            mqttMgr->_onWiFiDisconnected();
-        } else {
-            ESP_LOGE(mqttMgr->TAG,
-                     "Unknown wifi status. Flags are inconclusive.");
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-}
-
-void MQTTMessageDispatcher::_mailmanTask(void* arg) {
-    MQTTMessageDispatcher* mqttMgr =
-        reinterpret_cast<MQTTMessageDispatcher*>(arg);
+void MqttMailingService::_mailmanTask(void* arg) {
+    MqttMailingService* mqttMgr = reinterpret_cast<MqttMailingService*>(arg);
 
     while (1) {
         MQTTMessage outMail;
@@ -276,12 +212,11 @@ void MQTTMessageDispatcher::_mailmanTask(void* arg) {
  * See definition of esp_mqtt_event_id_t for list and description of events
  * thrown by MQTT client
  */
-void MQTTMessageDispatcher::_mqttEventHandler(void* handler_args,
-                                              esp_event_base_t base,
-                                              int32_t event_id,
-                                              void* event_data) {
-    MQTTMessageDispatcher* mqttMgr =
-        reinterpret_cast<MQTTMessageDispatcher*>(handler_args);
+void MqttMailingService::_mqttEventHandler(void* handler_args,
+                                           esp_event_base_t base,
+                                           int32_t event_id, void* event_data) {
+    MqttMailingService* mqttMgr =
+        reinterpret_cast<MqttMailingService*>(handler_args);
 
     ESP_LOGD(mqttMgr->TAG,
              "Event dispatched from event loop base=%s, event_id=%" PRIi32 "",

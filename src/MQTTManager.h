@@ -2,52 +2,32 @@
 #define _MQTT_MANAGER_H_
 
 #include "WiFiManager.h"
+#include "event_source.h"
 #include "mqtt_cfg.h"
 #include "mqtt_client.h"
 #include <Arduino.h>
 #include <WiFi.h>
 
 /* Class managing MQTT message dispatch. Uses a WiFi client. */
-class MQTTMessageDispatcher {
+class MqttMailingService {
   public:
-    MQTTMessageDispatcher();
-    ~MQTTMessageDispatcher();
-
-    /**
-     * @brief Starts the MQTTMessageDispatcher with WiFi informations
-     *
-     * @param ssid: The WiFi netwtwork SSID
-     * @param pass: The WiFi network password
-     */
-    void startWithWifiConnection(const char* ssid, const char* pass);
-
-    /**
-     * @brief Starts the MQTTMessageDispatcher with WiFi informations and the
-     *        MQTT broker URI
-     *
-     * @param ssid: The WiFi netwtwork SSID
-     * @param pass: The WiFi network password
-     * @param uri: The broker URI
-     */
-    void startWithWifiConnection(const char* ssid, const char* pass,
-                                 const char* uri);
+    MqttMailingService();
+    ~MqttMailingService();
 
     /**
      * @brief Starts the MQTTMessageDispatcher with a provided
      *        EventGroupHandle_t of WiFi events.
      *
-     * @param wifiEventGroup: The EventGroupHandle_t of WiFi events
      */
-    void start(EventGroupHandle_t wifiEventGroup);
+    void start();
 
     /**
      * @brief Starts the MQTTMessageDispatcher with a provided
      *        EventGroupHandle_t of WiFi events.
      *
-     * @param wifiEventGroup: The EventGroupHandle_t of WiFi events
      * @param uri: The broker URI
      */
-    void start(EventGroupHandle_t wifiEventGroup, const char* uri);
+    void start(const char* uri);
 
     /**
      * @brief Sets the broker URI used to send the MQTT messages. It will
@@ -131,19 +111,6 @@ class MQTTMessageDispatcher {
     QueueHandle_t getDataEventQueueHandle() const;
 
     /**
-     * @brief returns the event group containing internet connectivity flags.
-     * Useful if WiFi client was started using startWithWifiConnection() and
-     * information is required elsewhere
-     *
-     * @note See event_source.h for flag definitions, and
-     * WiFiManager::_eventHandler for flag usage
-     *
-     * @param[out] wifiEventGroupHandle containing flags with the status of the
-     * current internet connection
-     */
-    EventGroupHandle_t getWifiEventGroupHandle() const;
-
-    /**
      * @brief returns the handle to the ESP MQTT client usied by the MQTT
      * Manager
      *
@@ -153,14 +120,7 @@ class MQTTMessageDispatcher {
 
   private:
     static const char* TAG;
-    // Wifi related
-    WiFiManager* _pWifiMgr = nullptr;
-    EventGroupHandle_t _wifiEventGroup = nullptr;
-    void _onWiFiConnected();
-    void _onWiFiDisconnected();
-    static void _wifiConnectionMonitor(void* pMQTTMessageDispatcherInstance);
 
-    // MQTT related
     static esp_mqtt_client_handle_t _mqttClient;
     enum MqttClientState {
         MQTT_STATE_UNINIT = 0,
@@ -183,6 +143,10 @@ class MQTTMessageDispatcher {
 
     // Mailbox
     QueueHandle_t _mailbox = nullptr;
+
+    // Wifi related
+    // bool _should_manage_wifi_connection = false;
+    // WiFiManager* _pWifiMgr = nullptr;
 };
 
 #endif /* _MQTT_MANAGER_H_ */
