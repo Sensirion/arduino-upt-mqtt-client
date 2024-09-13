@@ -1,79 +1,60 @@
 #include "WiFiManager.h"
 
-const char* WiFiManager::TAG = "WiFi Station";
-EventGroupHandle_t WiFiManager::_wifiEventGroup = nullptr;
+const char* WiFiManager::TAG = "WiFi Manager";
 
 WiFiManager::WiFiManager() {
-    strncpy(_ssid, WIFI_SSID_OVERRIDE, 63);
-    strncpy(_password, WIFI_PW_OVERRIDE, 63);
+    // Ensure previous configuration is reset
+    WiFi.disconnect(true);
+    delay(500);
+
+    // Add event handlers
+    _initializeEventHandlers();
+}
+
+WiFiManager::WiFiManager(char* ssid, char* pass) {
+    strncpy(_ssid, ssid, 63);
+    strncpy(_password, pass, 63);
+
+    WiFiManager();
 }
 
 WiFiManager::~WiFiManager() {
-    WiFi.disconnect();
-    xEventGroupClearBits(_wifiEventGroup, WIFI_GOT_IP_BIT);
-    xEventGroupSetBits(_wifiEventGroup, WIFI_LOST_IP_BIT);
-    vEventGroupDelete(_wifiEventGroup);
+    WiFi.disconnect(true);
 }
 
 void WiFiManager::start() {
-    return start(_ssid, _password);
+    WiFi.begin(_ssid, _password);
 }
 
-void WiFiManager::start(const char* SSID, const char* pass) {
-    return start(SSID, pass, WIFI_SCAN_METHOD);
+bool WiFiManager::is_connected() {
+    return WiFi.status() == WL_CONNECTED;
 }
 
-void WiFiManager::start(const char* SSID, const char* pass,
-                        wifi_scan_method_t scanMethod) {
-    _wifiEventGroup = xEventGroupCreate();
-    xEventGroupClearBits(_wifiEventGroup, WIFI_GOT_IP_BIT);
-    xEventGroupSetBits(_wifiEventGroup, WIFI_LOST_IP_BIT);
-
-    WiFi.setScanMethod(scanMethod);
-    WiFi.onEvent(&_eventHandler);
-    WiFi.begin(SSID, pass);
+void WiFiManager::_initializeEventHandlers() {
+    WiFi.onEvent(&_onWiFiConnected,
+                 WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
+    WiFi.onEvent(&_onWiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
+    WiFi.onEvent(&_onWiFiDisconnected,
+                 WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 }
 
-EventGroupHandle_t WiFiManager::getEventGroupHandle() {
-    return _wifiEventGroup;
-}
-
-/**
- * See arduino_event_id_t definition for list of available events
+/*
+ *   Event Handlers
  */
-void WiFiManager::_eventHandler(WiFiEvent_t event) {
-    switch (event) {
-        case ARDUINO_EVENT_WIFI_READY:
-            ESP_LOGD(TAG, "WiFi interface ready");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_START:
-            ESP_LOGD(TAG, "WiFi client started");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_STOP:
-            ESP_LOGD(TAG, "WiFi clients stopped");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-            ESP_LOGI(TAG, "Connected to access point %s.", WiFi.SSID());
-            break;
-        case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "Disconnected from WiFi access point");
-            xEventGroupClearBits(_wifiEventGroup, WIFI_GOT_IP_BIT);
-            xEventGroupSetBits(_wifiEventGroup, WIFI_LOST_IP_BIT);
-            break;
-        case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
-            ESP_LOGD(TAG, "Authentication mode of access point has changed");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-            ESP_LOGI(TAG, "Obtained IP address: %s", WiFi.localIP().toString());
-            xEventGroupClearBits(_wifiEventGroup, WIFI_LOST_IP_BIT);
-            xEventGroupSetBits(_wifiEventGroup, WIFI_GOT_IP_BIT);
-            break;
-        case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-            ESP_LOGD(TAG, "Lost IP address and IP address is reset to 0");
-            break;
-        case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
-            ESP_LOGD(TAG, "STA IPv6 is preferred");
-        default:
-            break;
-    }
+
+void _onWiFiConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+    ESP_LOGI(TAG, "Connected to WiFi AP successfully!");
+}
+
+void _onWiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
+    ESP_LOGI(TAG, "Got an IP from WiFi AP:");
+    ESP_LOGI(TAG, WiFi.localIP());
+}
+
+void _onWiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+    ESP_LOGW(TAG, "Got disconnected from WiFi AP (code %i)",
+             info.wifi_sta_disconnected.reason);
+    ESP_LOGW(TAG, "Trying to reconnect...");
+    WiFi.disconnect();
+    WiFi.reconnect();
 }

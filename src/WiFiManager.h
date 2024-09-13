@@ -2,56 +2,38 @@
 #define _WIFI_MANAGER_H_
 
 #include "WiFi.h"
-#include "esp_event.h"
-#include "esp_log.h"
-#include "event_source.h"
 #include "wifi_cfg.h"
 
 /* Class managing wifi connectivity */
 class WiFiManager {
   public:
     WiFiManager();
+    WiFiManager(char* ssid, char* pass);
     ~WiFiManager();
 
     /**
-     * @brief Starts a WiFi manager with the credentials from configuration
+     * @brief Starts the connection procedure to the configured AP
      */
     void start();
 
     /**
-     * @brief Starts a WiFi manager with the provided credentials
-     *
-     * @param SSID: The SSID of the WiFi network
-     * @param pass: The password of the WiFi network
+     * @brief Returns true if WiFi is currently connected
      */
-    void start(const char* SSID, const char* pass);
-
-    /**
-     * @brief Starts a WiFi manager with the provided credentials and scan
-     *        method.
-     *
-     * @param SSID: The SSID of the WiFi network
-     * @param pass: The password of the WiFi network
-     * @param scanMethod: the wifi_scan_method_t to use
-     */
-    void start(const char* SSID, const char* pass,
-               wifi_scan_method_t scanMethod);
-
-    /**
-     * @brief Get the handle of the WiFi event group
-     */
-    EventGroupHandle_t getEventGroupHandle();
-
-    WiFiClass* operator->() {
-        return &WiFi;
-    }
+    bool is_connected();
 
   private:
     static const char* TAG;
-    static EventGroupHandle_t _wifiEventGroup;
-    static void _eventHandler(WiFiEvent_t);
-    char _ssid[64];
-    char _password[64];
+    char _ssid[64] = WIFI_SSID_OVERRIDE;
+    char _password[64] = WIFI_PW_OVERRIDE;
+    void _initializeEventHandlers();
 };
+
+/*
+ *   Event Handlers
+ */
+
+void _onWiFiConnected(WiFiEvent_t event, WiFiEventInfo_t info);
+void _onWiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info);
+void _onWiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
 
 #endif /* _WIFI_MANAGER_H_ */
