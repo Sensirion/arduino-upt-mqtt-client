@@ -43,18 +43,17 @@ void WiFiManager::_initializeEventHandlers() {
  */
 
 void _onWiFiConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-    ESP_LOGI(TAG, "Connected to WiFi AP successfully!");
+    ESP_LOGI("WiFi Manager", "Connected to WiFi AP successfully!");
 }
 
 void _onWiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
-    ESP_LOGI(TAG, "Got an IP from WiFi AP:");
-    ESP_LOGI(TAG, WiFi.localIP());
+    ESP_LOGI("WiFi Manager", "Got an IP from WiFi AP:");
+    ESP_LOGI("WiFi Manager", "%s", WiFi.localIP());
 }
 
 void _onWiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-    ESP_LOGW(TAG, "Got disconnected from WiFi AP (code %i)",
+    ESP_LOGW("WiFi Manager", "Got disconnected from WiFi AP (code %i)",
              info.wifi_sta_disconnected.reason);
-    ESP_LOGW(TAG, "Trying to reconnect...");
-    WiFi.disconnect();
+    ESP_LOGW("WiFi Manager", "Trying to reconnect...");
     WiFi.reconnect();
 }
