@@ -1,10 +1,9 @@
 #include "MQTTManager.h"
 #include <Arduino.h>
 
-/* Shows features of the library:
-    -- Connecting to WiFi AP
-    -- Connecting to a MQTT broker via it's URI
-    -- Dispatching MQTT Messages
+/*
+    In this usage example the main application is managing the WiFi connection
+    itself. Once connection is established mqttMailman.start() can be called.
 */
 
 MqttMailingService mqttMailman;
@@ -12,6 +11,7 @@ QueueHandle_t mailbox;
 MQTTMessage mail;
 int count = 0;
 
+// Configuration
 const char* ssid = "ap-name";
 const char* password = "ap-pass.";
 const char* broker_uri = "mqtt://mqtt.some-server.com:1883";
@@ -19,60 +19,32 @@ const char* broker_uri = "mqtt://mqtt.some-server.com:1883";
 const char ssl_cert[] =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
 
-unsigned long previousMillis = 0;
-unsigned long interval = 5000;
-
-void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-    Serial.println("Connected to AP successfully!");
-}
-
-void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
-
-    mqttMailman.start();
-}
-
-void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-    Serial.println("Disconnected from WiFi access point");
-    Serial.print("WiFi lost connection. Reason: ");
-    Serial.println(info.wifi_sta_disconnected.reason);
-    Serial.println("Trying to Reconnect");
-    WiFi.reconnect();
-}
-
-void initializeWiFi() {
-    WiFi.disconnect(true);
-
-    delay(1000);
-
-    WiFi.onEvent(WiFiStationConnected,
-                 WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
-    WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
-    WiFi.onEvent(WiFiStationDisconnected,
-                 WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-}
-
 void setup() {
     Serial.begin(115200);
-    delay(2000);
+    sleep(1);
 
     // Configure the MQTT Mailman service
     mqttMailman.setBrokerURI(broker_uri);
+    // mqttMailman.setSslCertificate(ssl_cert); // Uncomment for SSL connection
     mailbox = mqttMailman.getMailbox();
 
-    // Initialize and connect to WiFi
-    initializeWiFi();
+    // Connect to WiFi
     WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.println("Waiting on the WiFi connection");
+        sleep(1);
+    }
+    Serial.println("Connected to WiFi AP !");
 
-    // Wait until service initialized
+    // Wait until MQTT service initialized
+    mqttMailman.start();
     while (mqttMailman.getServiceState() ==
            MqttMailingServiceState::UNINITIALIZED) {
+        Serial.println("MQTT mailing service is initializing...");
         sleep(1);
     }
 
-    Serial.println("setup() completed");
+    Serial.println("setup() complete.");
 }
 
 void loop() {
