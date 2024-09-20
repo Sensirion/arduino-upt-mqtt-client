@@ -4,7 +4,7 @@ Arduino library for publishing messages to a MQTT broker.
 It offers a simplified interface to the Arduino Espressif Wi-Fi and ESP-IDF mqtt_client libraries.
 
 ## Disclaimer
-The UPT MQTT module is in early development, and is not production ready.  
+The UPT MQTT module is in early development and is not production ready.  
 It is **not yet available through library managers**.  
 Have a look at the open issues to know what to expect. 
 

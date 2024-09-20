@@ -1,7 +1,6 @@
-#ifndef _MQTT_MANAGER_H_
-#define _MQTT_MANAGER_H_
+#ifndef UPT_MQTT_MANAGER_H_
+#define UPT_MQTT_MANAGER_H_
 
-#include "WiFiManager.h"
 #include "event_source.h"
 #include "mqtt_cfg.h"
 #include "mqtt_client.h"
@@ -14,19 +13,42 @@ enum MqttMailingServiceState {
     CONNECTING,
     CONNECTED,
     DISCONNECTED,
-    RECONNECTING,
 };
 
-/* Class managing MQTT message dispatch. Uses a WiFi client. */
-class MqttMailingService {
+/* Class managing MQTT message dispatch. Optionally manages Wi-Fi connection. */
+class __attribute__((unused)) MqttMailingService {
   public:
     MqttMailingService();
     ~MqttMailingService();
 
     /**
      * @brief Starts the MqttMailingService
+     *
+     * @note If Wi-Fi connection is not established when calling start, the
+     *       mqtt client will print out connection errors. It will however
+     *       automatically recover once a connection is established.
      */
     void start();
+
+    /**
+     * @brief Starts the MqttMailingService without an established Wi-Fi
+     * connection. The MqttMailingService will handle connectivity  by itself.
+     *
+     * @param ssid: The SSID of the WiFi AP
+     *
+     * @param pass: the password of the WiFi AP
+     *
+     */
+    __attribute__((unused)) void startWithDelegatedWiFi(const char* ssid,
+                                                        const char* pass);
+
+    /**
+     * @brief Starts the MqttMailing Service without an established
+     *        Wi-Fi connection and uses the environment variables
+     *        WIFI_SSID_OVERRIDE and WIFI_PW_OVERRIDE to configure the
+     *        Wi-Fi ssid and password.
+     */
+    __attribute__((unused)) void startWithDelegatedWiFi();
 
     /**
      * @brief Sets the broker URI used to send the MQTT messages. It will
@@ -36,7 +58,7 @@ class MqttMailingService {
      *
      * @param uri: The chosen broker URI
      */
-    void setBrokerURI(const char* uri);
+    __attribute__((unused)) void setBrokerURI(const char* uri);
 
     /**
      * @brief Sets the Last Will Testament (LWT) topic.It will
@@ -46,7 +68,7 @@ class MqttMailingService {
      *
      * @param topic: The chosen LWT topic
      */
-    void setLWTTopic(const char* topic);
+    __attribute__((unused)) void setLWTTopic(const char* topic);
 
     /**
      * @brief Sets the Last Will Testament (LWT) message.It will
@@ -56,7 +78,7 @@ class MqttMailingService {
      *
      * @param topic: The chosen LWT message
      */
-    void setLWTMessage(const char* msg);
+    __attribute__((unused)) void setLWTMessage(const char* msg);
 
     /**
      * @brief Set the Ssl Certificate of the MQTT broker
@@ -66,67 +88,67 @@ class MqttMailingService {
      *
      * @param sslCert: The root certificate of the MQTT broker.
      */
-    void setSslCertificate(const char* sslCert);
+    __attribute__((unused)) void setSslCertificate(const char* sslCert);
 
     /**
      * @brief Set the Quality of Service (QoS) for the sent MQTT messages
      *
      * @param qos: chosen QoS as integer
      */
-    void setQOS(int qos);
+    __attribute__((unused)) void setQOS(int qos);
 
     /**
      * @brief Set the retain flag for the sent MQTT messages
      *
      * @param flag: the chosen flag as integer
      */
-    void setRetainFlag(int flag);
+    __attribute__((unused)) void setRetainFlag(int flag);
 
     /**
      * @brief returns the QueueHandle_t to the mailbox
      *
      * @note: The mailbox is only available once initialized
      */
-    QueueHandle_t getMailbox() const;
+    __attribute__((unused)) QueueHandle_t getMailbox() const;
 
     /**
      * @brief returns the state of the service
      */
-    MqttMailingServiceState getServiceState();
+    __attribute__((unused)) MqttMailingServiceState getServiceState();
 
   private:
     static const char* TAG;
     MqttMailingServiceState _state;
-    char _brokerFullURI[64];
-    char _lwtTopic[128];
-    char _lwtMessage[256];
+    char _brokerFullURI[64]{};
+    char _lwtTopic[128]{};
+    char _lwtMessage[256]{};
     bool _useSsl;
     const char* _sslCert;
     int _qos;
     int _retainFlag;
     TaskHandle_t _mailmanTaskHandle = nullptr;
-    static void _mqttEventHandler(void*, esp_event_base_t, int32_t, void*);
+    TaskHandle_t _wifiCheckTaskHandle = nullptr;
 
     // ESP MQTT client
     static esp_mqtt_client_handle_t _espMqttClient;
     void _initEspMqttClient();
     void _startEspMqttClient();
-    void _stopEspMqttClient();
     void _destroyEspMqttClient();
 
     // Mailbox
     QueueHandle_t _mailbox = nullptr;
 
-    // Wifi related
+    // Wi-fi related
     bool _should_manage_wifi_connection = false;
-    WiFiManager* _pWifiMgr = nullptr;
+    [[noreturn]] static void _wifiCheckTask(__attribute__((unused)) void* arg);
 
     // Running task definition
-    static void _mailmanTask(void* pMQTTMessageDispatcherInstance);
-
+    [[noreturn]] static void _mailmanTask(void* pMqttMailingService);
     // Event handler
-    static void _espMqttEventHandler(void* handler_args, esp_event_base_t base,
+    static void _espMqttEventHandler(void* handler_args,
+                                     __attribute__((unused))
+                                     esp_event_base_t base,
                                      int32_t event_id, void* event_data);
 };
 
-#endif /* _MQTT_MANAGER_H_ */
+#endif /* UPT_MQTT_MANAGER_H_ */
