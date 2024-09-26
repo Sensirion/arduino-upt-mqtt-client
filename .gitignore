@@ -1,4 +1,5 @@
 .pio
 .vscode/
 examples/basicUsage/basicUsage.cpp
+examples/delegatedWifiUsage/delegatedWifiUsage.cpp
 /logs/
