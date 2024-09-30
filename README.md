@@ -1,10 +1,10 @@
-# Sensirion UPT MQTT CLient
+# Sensirion UPT MQTT Client
 
 Arduino library for publishing messages to a MQTT broker.   
-It offers a simplified interface to the Arduino Espressif WiFi and ESP-IDF mqtt_client libraries.
+It offers a simplified interface to the Arduino Espressif Wi-Fi and ESP-IDF mqtt_client libraries.
 
 ## Disclaimer
-The UPT MQTT module is in early development, and is not production ready.  
+The UPT MQTT module is in early development and is not production ready.  
 It is **not yet available through library managers**.  
 Have a look at the open issues to know what to expect. 
 
@@ -34,6 +34,8 @@ You will also find a detailed API description [here](documentation/api_reference
 
 This library uses the following dependencies.
 
-* [Arduino ESP32](https://docs.espressif.com/projects/arduino-esp32/en/latest/getting_started.html#about-arduino-esp32) (In particular, the [wifi library](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/wifi.html), [message logging](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html) and [MQTT client](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/mqtt.html#api-reference))  
+* [Arduino ESP32](https://docs.espressif.com/projects/arduino-esp32/en/latest/getting_started.html#about-arduino-esp32)
+(In particular, the [Wi-Fi library](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/wifi.html),
+[message logging](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html) and
+[MQTT client](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/mqtt.html#api-reference)) \
 __Caution__: the ArduinoEspressif implementation of the ESP MQTT Client does not match the official API documentation!
-

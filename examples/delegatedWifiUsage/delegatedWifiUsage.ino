@@ -2,9 +2,7 @@
 #include <Arduino.h>
 
 /*
-    In this usage example, the main application is managing the Wi-Fi connection
-    itself.
-    Once connection is established, mqttMailingService.start() can be called.
+    In this usage example, the MqttMailingService is managing the Wi-Fi itself.
 */
 
 MqttMailingService mqttMailingService;
@@ -15,8 +13,7 @@ int count = 0;
 // Configuration
 const char* ssid = "ap-name";
 const char* password = "ap-pass.";
-const char* broker_uri = "mqtt://mqtt.some-server.com:1883";
-
+const char* broker_uri = "mqtt://mqtt.yourserver.com:1883";
 const char ssl_cert[] =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
 
@@ -26,23 +23,22 @@ void setup() {
 
     // Configure the MQTT mailing service
     mqttMailingService.setBrokerURI(broker_uri);
+    mailbox = mqttMailingService.getMailbox();
     // mqttMailingService.setSslCertificate(ssl_cert); // Uncomment for SSL
     // connection
-    mailbox = mqttMailingService.getMailbox();
 
-    // Connect to Wi-Fi
-    WiFi.begin(ssid, password);
+    mqttMailingService.startWithDelegatedWiFi(ssid, password);
     while (!WiFi.isConnected()) {
-        Serial.println("Waiting on the Wi-Fi connection");
+        // Wait for Wi-Fi connection, since MQTT mailing service
+        // can't establish a connection without Wi-Fi.
+        Serial.println("Waiting for Wi-Fi connection...");
         sleep(1);
     }
-    Serial.println("Connected to Wi-Fi AP !");
 
-    // Wait until MQTT service initialized
-    mqttMailingService.start();
-    while (mqttMailingService.getServiceState() ==
-           MqttMailingServiceState::UNINITIALIZED) {
-        Serial.println("MQTT mailing service is initializing...");
+    // Wait until MQTT service connects to broker
+    while (mqttMailingService.getServiceState() !=
+           MqttMailingServiceState::CONNECTED) {
+        Serial.println("MQTT mailing service is connecting...");
         sleep(1);
     }
 
