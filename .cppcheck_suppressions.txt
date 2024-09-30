@@ -1,3 +1,1 @@
 unusedStructMember:src/event_source.h
-unusedPrivateFunction:src/MQTTManager.h
-wrongPrintfScanfArgNum:examples/basicUsage/*
