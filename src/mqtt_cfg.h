@@ -20,6 +20,9 @@
 #define MQTT_BROKER_FULL_URI_OVERRIDE "mqtt://mymqttbroker.com:1883"
 #define MQTT_BROKER_CERTIFICATE_OVERRIDE ""
 #define MQTT_USE_SSL_OVERRIDE 0
+
+#define WIFI_SSID_OVERRIDE "Obi-WLAN Kenobi"
+#define WIFI_PW_OVERRIDE "ConnectToTheAP,IWill"
 #endif /* PIO_ADVANCED_SCRIPTING */
 
 #define MQTT_DATAQUEUE_LEN 10
