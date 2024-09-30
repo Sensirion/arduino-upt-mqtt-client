@@ -1,12 +1,13 @@
-#include "MQTTManager.h"
+#include "MqttMailingService.h"
 #include <Arduino.h>
 
 /*
-    In this usage example the main application is managing the Wi-Fi connection
-    itself. Once connection is established mqttMailman.start() can be called.
+    In this usage example, the main application is managing the Wi-Fi connection
+    itself.
+    Once connection is established, mqttMailingService.start() can be called.
 */
 
-MqttMailingService mqttMailman;
+MqttMailingService mqttMailingService;
 QueueHandle_t mailbox;
 MQTTMessage mail;
 int count = 0;
@@ -23,10 +24,11 @@ void setup() {
     Serial.begin(115200);
     sleep(1);
 
-    // Configure the MQTT Mailman service
-    mqttMailman.setBrokerURI(broker_uri);
-    // mqttMailman.setSslCertificate(ssl_cert); // Uncomment for SSL connection
-    mailbox = mqttMailman.getMailbox();
+    // Configure the MQTT mailing service
+    mqttMailingService.setBrokerURI(broker_uri);
+    // mqttMailingService.setSslCertificate(ssl_cert); // Uncomment for SSL
+    // connection
+    mailbox = mqttMailingService.getMailbox();
 
     // Connect to Wi-Fi
     WiFi.begin(ssid, password);
@@ -37,8 +39,8 @@ void setup() {
     Serial.println("Connected to Wi-Fi AP !");
 
     // Wait until MQTT service initialized
-    mqttMailman.start();
-    while (mqttMailman.getServiceState() ==
+    mqttMailingService.start();
+    while (mqttMailingService.getServiceState() ==
            MqttMailingServiceState::UNINITIALIZED) {
         Serial.println("MQTT mailing service is initializing...");
         sleep(1);

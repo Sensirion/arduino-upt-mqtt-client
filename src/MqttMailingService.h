@@ -1,5 +1,5 @@
-#ifndef UPT_MQTT_MANAGER_H_
-#define UPT_MQTT_MANAGER_H_
+#ifndef UPT_MQTT_MAILING_SERVICE_H
+#define UPT_MQTT_MAILING_SERVICE_H
 
 #include "event_source.h"
 #include "mqtt_cfg.h"
@@ -151,4 +151,4 @@ class __attribute__((unused)) MqttMailingService {
                                      int32_t event_id, void* event_data);
 };
 
-#endif /* UPT_MQTT_MANAGER_H_ */
+#endif /* UPT_MQTT_MAILING_SERVICE_H */

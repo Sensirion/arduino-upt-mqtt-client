@@ -1,4 +1,4 @@
-#include "MQTTManager.h"
+#include "MqttMailingService.h"
 #include "event_source.h"
 
 const char* MqttMailingService::TAG = "MQTT Mail";

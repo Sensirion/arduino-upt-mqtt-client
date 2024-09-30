@@ -1,11 +1,11 @@
-#include "MQTTManager.h"
+#include "MqttMailingService.h"
 #include <Arduino.h>
 
 /*
     In this usage example, the MqttMailingService is managing the Wi-Fi itself.
 */
 
-MqttMailingService mqttMailman;
+MqttMailingService mqttMailingService;
 QueueHandle_t mailbox;
 MQTTMessage mail;
 int count = 0;
@@ -21,12 +21,13 @@ void setup() {
     Serial.begin(115200);
     sleep(1);
 
-    // Configure the MQTT Mailman service
-    mqttMailman.setBrokerURI(broker_uri);
-    mailbox = mqttMailman.getMailbox();
-    // mqttMailman.setSslCertificate(ssl_cert); // Uncomment for SSL connection
+    // Configure the MQTT mailing service
+    mqttMailingService.setBrokerURI(broker_uri);
+    mailbox = mqttMailingService.getMailbox();
+    // mqttMailingService.setSslCertificate(ssl_cert); // Uncomment for SSL
+    // connection
 
-    mqttMailman.startWithDelegatedWiFi(ssid, password);
+    mqttMailingService.startWithDelegatedWiFi(ssid, password);
     while (!WiFi.isConnected()) {
         // Wait for Wi-Fi connection, since MQTT mailing service
         // can't establish a connection without Wi-Fi.
@@ -35,7 +36,7 @@ void setup() {
     }
 
     // Wait until MQTT service connects to broker
-    while (mqttMailman.getServiceState() !=
+    while (mqttMailingService.getServiceState() !=
            MqttMailingServiceState::CONNECTED) {
         Serial.println("MQTT mailing service is connecting...");
         sleep(1);

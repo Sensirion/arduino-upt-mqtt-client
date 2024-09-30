@@ -5,13 +5,13 @@ Typical use can be decomposed into three steps:
 #### Step 0: Include the library files
 
 ```cpp
-    #include "MQTTManager.h"
+    #include "MqttMailingService.h"
 ```
 
-Instantiate MQTTManager globally (before void setup()):
+Instantiate MqttMailingService globally (before void setup()):
 
 ```cpp
-    MqttMailingService mqttMailman;
+    MqttMailingService mqttMailingService;
 ```
 Failure to do so globally will likely lead to the instances being destroyed unsafely due to their scope being 
 terminated, crashing the board.
@@ -38,8 +38,8 @@ try to re-connect if the connection was lost.
 Once the initial Wi-Fi connection is established, you can configure the broker and start the MQTT mailmain.
 
 ```cpp
-  mqttMailman.setBrokerURI(broker_uri);
-  mqttMailman.start();
+  mqttMailingService.setBrokerURI(broker_uri);
+  mqttMailingService.start();
 ```
 
 #### Step 3: Feed data to be sent to the MQTT broker
@@ -50,7 +50,7 @@ as defined in ```events_source.h```.
 The code to send a simple string to the broker could look as such:
 
 ```cpp
-    mailbox = mqttMailman.getMailbox();
+    mailbox = mqttMailingService.getMailbox();
 
     MQTTMessage mail = {
         .topic = "myTopic/",
