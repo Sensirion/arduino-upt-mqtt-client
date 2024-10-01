@@ -1,5 +1,6 @@
 #include "MqttMailingService.h"
 #include "event_source.h"
+#include <WiFi.h>
 
 const char* MqttMailingService::TAG = "MQTT Mail";
 esp_mqtt_client_handle_t MqttMailingService::_espMqttClient = nullptr;

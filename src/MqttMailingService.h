@@ -5,7 +5,6 @@
 #include "mqtt_cfg.h"
 #include "mqtt_client.h"
 #include <Arduino.h>
-#include <WiFi.h>
 
 enum MqttMailingServiceState {
     UNINITIALIZED = 0,
