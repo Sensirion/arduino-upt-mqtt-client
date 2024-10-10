@@ -32,7 +32,7 @@ Two example scripts are available in the `examples` folder:
 
 
 ### API reference
-You will find a detailed API description [here](documentation/api_reference.md)
+You will find a more detailed API guide [here](documentation/api_guide.md)
 
 ![overview_schema](documentation/SchemaUPT_MQTT.png)
 
