@@ -1,12 +1,12 @@
+> **Disclaimer:**  
+> The UPT MQTT module is in early development and is not production ready.  
+It is **not yet available through library managers**. Have a look at the open issues to know what to expect. 
+
 # Sensirion UPT MQTT Client
 
-Arduino library for publishing messages to a MQTT broker.   
-It offers a simplified interface to the Arduino Espressif Wi-Fi and ESP-IDF mqtt_client libraries.
+Arduino library for publishing messages to an MQTT broker.   
+It offers a simplified interface to the ESP-IDF mqtt_client libraries and optionaly handles Wi-Fi connectivity for you.
 
-## Disclaimer
-The UPT MQTT module is in early development and is not production ready.  
-It is **not yet available through library managers**.  
-Have a look at the open issues to know what to expect. 
 
 ## Getting started
 
@@ -24,9 +24,15 @@ You will find more instructions [here](documentation/platformio_usage.md)
 It is also possible to use the application using *Arduino IDE*.
 You will find more instructions [here](documentation/arduino_ide_usage.md)
 
-### Usage
-An example usage script is available in the `examples folder`.  
-You will also find a detailed API description [here](documentation/api_reference.md)
+### Usage examples
+Two example scripts are available in the `examples` folder:
+- *delegatedWifiUsage*: In this example the main application delegates the WiFi management to the MQTT client. Such approach should be used if your application does no use Wi-Fi overwise and you do not want any fancy Wi-Fi configuration.
+
+- *selfManagedWifiUsage*: In this example the main application will handle the WiFi management, and the MQTT client will not care about it. Such approach should be used in most cases since your application will likely use WiFi for other things.
+
+
+### API reference
+You will find a more detailed API guide [here](documentation/api_guide.md)
 
 ![overview_schema](documentation/SchemaUPT_MQTT.png)
 

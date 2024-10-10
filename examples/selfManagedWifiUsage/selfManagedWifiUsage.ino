@@ -1,5 +1,6 @@
 #include "MqttMailingService.h"
 #include <Arduino.h>
+#include <WiFi.h>
 
 /*
     In this usage example, the main application is managing the Wi-Fi connection
@@ -15,7 +16,7 @@ int count = 0;
 // Configuration
 const char* ssid = "ap-name";
 const char* password = "ap-pass.";
-const char* broker_uri = "mqtt://mqtt.some-server.com:1883";
+const char* broker_uri = "mqtt://mqtt.someserver.com:1883";
 
 const char ssl_cert[] =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
@@ -26,8 +27,10 @@ void setup() {
 
     // Configure the MQTT mailing service
     mqttMailingService.setBrokerURI(broker_uri);
-    // mqttMailingService.setSslCertificate(ssl_cert); // Uncomment for SSL
-    // connection
+
+    // Uncomment next line for SSL connection
+    // mqttMailingService.setSslCertificate(ssl_cert);
+
     mailbox = mqttMailingService.getMailbox();
 
     // Connect to Wi-Fi

@@ -224,11 +224,9 @@ void MqttMailingService::_destroyEspMqttClient() {
     }
 }
 
-void MqttMailingService::_espMqttEventHandler(void* handler_args,
-                                              __attribute__((unused))
-                                              esp_event_base_t base,
-                                              int32_t event_id,
-                                              void* event_data) {
+void MqttMailingService::_espMqttEventHandler(
+    void* handler_args, __attribute__((unused)) esp_event_base_t base,
+    int32_t event_id, void* event_data) {
     auto* pMailingService = reinterpret_cast<MqttMailingService*>(handler_args);
     auto event = reinterpret_cast<esp_mqtt_event_handle_t>(event_data);
 
@@ -263,7 +261,7 @@ void MqttMailingService::_espMqttEventHandler(void* handler_args,
 
 /**
  * Wi-Fi check task
- * This tasks checks if Wi-Fi is still connected once per second
+ * This tasks checks if Wi-Fi is still connected every 10 second
  * and tries to reconnect if Wi-Fi connection is not established.
  */
 void MqttMailingService::_wifiCheckTask(__attribute__((unused)) void* arg) {
