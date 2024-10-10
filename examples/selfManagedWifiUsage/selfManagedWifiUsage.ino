@@ -16,7 +16,7 @@ int count = 0;
 // Configuration
 const char* ssid = "ap-name";
 const char* password = "ap-pass.";
-const char* broker_uri = "mqtt://mqtt.some-server.com:1883";
+const char* broker_uri = "mqtt://mqtt.someserver.com:1883";
 
 const char ssl_cert[] =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
