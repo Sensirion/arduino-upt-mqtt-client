@@ -34,6 +34,19 @@ class __attribute__((unused)) MqttMailingService {
      * connection. The MqttMailingService will handle connectivity  by itself.
      *
      * @param ssid: The SSID of the WiFi AP
+     * @param pass: the password of the WiFi AP
+     * @param should_be_blocking: Specify if the call should be blocking until
+     * connection is established with broker
+     */
+    __attribute__((unused)) void
+    startWithDelegatedWiFi(const char* ssid, const char* pass,
+                           const bool shouldBeBlocking);
+
+    /**
+     * @brief Starts the MqttMailingService without an established Wi-Fi
+     * connection. The MqttMailingService will handle connectivity  by itself.
+     *
+     * @param ssid: The SSID of the WiFi AP
      *
      * @param pass: the password of the WiFi AP
      *
@@ -115,6 +128,12 @@ class __attribute__((unused)) MqttMailingService {
      */
     __attribute__((unused)) MqttMailingServiceState getServiceState();
 
+    /**
+     * @brief returns whether the service has successfully established
+     * a connection and is ready to forward messages to the broker
+     */
+    __attribute__((unused)) bool isReady();
+
   private:
     static const char* TAG;
     MqttMailingServiceState _state;
@@ -144,10 +163,10 @@ class __attribute__((unused)) MqttMailingService {
     // Running task definition
     [[noreturn]] static void _mailmanTask(void* pMqttMailingService);
     // Event handler
-    static void _espMqttEventHandler(void* handler_args,
-                                     __attribute__((unused))
-                                     esp_event_base_t base,
-                                     int32_t event_id, void* event_data);
+    static void
+    _espMqttEventHandler(void* handler_args,
+                         __attribute__((unused)) esp_event_base_t base,
+                         int32_t event_id, void* event_data);
 };
 
 #endif /* UPT_MQTT_MAILING_SERVICE_H */

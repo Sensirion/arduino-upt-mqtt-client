@@ -51,20 +51,49 @@ void MqttMailingService::start() {
 }
 
 __attribute__((unused)) void
-MqttMailingService::startWithDelegatedWiFi(const char* ssid, const char* pass) {
+MqttMailingService::startWithDelegatedWiFi(const char* ssid, const char* pass,
+                                           const bool shouldBeBlocking) {
+
     _should_manage_wifi_connection = true;
     WiFi.begin(ssid, pass);
+
+    if (shouldBeBlocking) {
+        ESP_LOGI(MqttMailingService::TAG, "Waiting for Wi-Fi connection...");
+        // Wait for Wi-Fi connection, since MQTT mailing service
+        // can't establish a connection without Wi-Fi.
+        while (!WiFi.isConnected()) {
+            sleep(1);
+        }
+        ESP_LOGD(MqttMailingService::TAG, "Wi-Fi connected");
+    }
+
     start();
 
+    // Create Wi-Fi monitoring task to ensure reconnection
     if (_wifiCheckTaskHandle == nullptr) {
         xTaskCreate(MqttMailingService::_wifiCheckTask, "Wi-Fi Check", 1 * 1024,
                     nullptr, tskIDLE_PRIORITY + 1, &(_wifiCheckTaskHandle));
         ESP_LOGI(MqttMailingService::TAG, "WiFi check task launched.");
     }
+
+    if (shouldBeBlocking) {
+        // Wait until MQTT service connects to broker
+        ESP_LOGD(MqttMailingService::TAG,
+                 "MQTT mailing service is connecting...");
+        while (getServiceState() != MqttMailingServiceState::CONNECTED) {
+            sleep(1);
+        }
+        ESP_LOGD(MqttMailingService::TAG, "MQTT mailing service is connected.");
+    }
+}
+
+__attribute__((unused)) void
+MqttMailingService::startWithDelegatedWiFi(const char* ssid, const char* pass) {
+    startWithDelegatedWiFi(ssid, pass, false);
 }
 
 __attribute__((unused)) void MqttMailingService::startWithDelegatedWiFi() {
-    startWithDelegatedWiFi(WIFI_SSID_OVERRIDE, WIFI_PW_OVERRIDE);
+    startWithDelegatedWiFi(WIFI_SSID_OVERRIDE, WIFI_PW_OVERRIDE, false);
 }
 
 __attribute__((unused)) void
@@ -129,6 +158,14 @@ __attribute__((unused)) QueueHandle_t MqttMailingService::getMailbox() const {
 __attribute__((unused)) MqttMailingServiceState
 MqttMailingService::getServiceState() {
     return _state;
+}
+
+__attribute__((unused)) bool MqttMailingService::isReady() {
+    if (_should_manage_wifi_connection) {
+        return WiFi.isConnected() &&
+               getServiceState() == MqttMailingServiceState::CONNECTED;
+    }
+    return getServiceState() == MqttMailingServiceState::CONNECTED;
 }
 
 /*
@@ -235,7 +272,7 @@ void MqttMailingService::_espMqttEventHandler(
             ESP_LOGI(pMailingService->TAG, "ESP MQTT client connected");
             pMailingService->_state = MqttMailingServiceState::CONNECTED;
 
-            // Start running task
+            // Start running task if not existing yet
             if (pMailingService->_mailmanTaskHandle == nullptr) {
                 xTaskCreate(MqttMailingService::_mailmanTask,
                             "MQTT MsgDispatcher", 5 * 1024,

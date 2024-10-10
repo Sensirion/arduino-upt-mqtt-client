@@ -24,25 +24,18 @@ void setup() {
     // Configure the MQTT mailing service
     mqttMailingService.setBrokerURI(broker_uri);
     mailbox = mqttMailingService.getMailbox();
-    // mqttMailingService.setSslCertificate(ssl_cert); // Uncomment for SSL
-    // connection
 
-    mqttMailingService.startWithDelegatedWiFi(ssid, password);
-    while (!WiFi.isConnected()) {
-        // Wait for Wi-Fi connection, since MQTT mailing service
-        // can't establish a connection without Wi-Fi.
-        Serial.println("Waiting for Wi-Fi connection...");
-        sleep(1);
-    }
+    // Uncomment next line for SSL connection
+    // mqttMailingService.setSslCertificate(ssl_cert);
 
-    // Wait until MQTT service connects to broker
-    while (mqttMailingService.getServiceState() !=
-           MqttMailingServiceState::CONNECTED) {
-        Serial.println("MQTT mailing service is connecting...");
-        sleep(1);
-    }
+    Serial.println("MQTT Mailing Service starting and connecting ....");
 
-    Serial.println("setup() complete.");
+    // A blocking start ensure that connection is established before starting
+    // sending messages.
+    bool blockingStart = true;
+    mqttMailingService.startWithDelegatedWiFi(ssid, password, blockingStart);
+
+    Serial.println("MQTT Mailing Service started and connected !");
 }
 
 void loop() {
