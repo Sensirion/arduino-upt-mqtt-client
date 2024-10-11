@@ -36,18 +36,13 @@ void setup() {
     // Connect to Wi-Fi
     WiFi.begin(ssid, password);
     while (!WiFi.isConnected()) {
-        Serial.println("Waiting on the Wi-Fi connection");
+        Serial.println("Waiting on the Wi-Fi connection...");
         sleep(1);
     }
     Serial.println("Connected to Wi-Fi AP !");
 
     // Wait until MQTT service initialized
     mqttMailingService.start();
-    while (mqttMailingService.getServiceState() ==
-           MqttMailingServiceState::UNINITIALIZED) {
-        Serial.println("MQTT mailing service is initializing...");
-        sleep(1);
-    }
 
     Serial.println("setup() complete.");
 }

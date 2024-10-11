@@ -18,7 +18,16 @@ Failure to do so globally will likely lead to the instances being destroyed unsa
 terminated, crashing the board.
 
 ### Client start
-You can start the client either with `start()` or with `startWithDelegatedWiFi(ssid, pass)` depending on how you want to handle Wi-Fi connectivity (see dedicated section on that topic).
+You can start the client either with `start()` or with `startWithDelegatedWiFi(ssid, pass, shouldBeBlocking)` depending on how you want to handle Wi-Fi connectivity (see dedicated section on that topic).
+
+#### Blocking or not blocking start ?
+The method `startWithDelegatedWiFi` provides an optional argument `shouldBeBlocking` (false by default) that would make it a blocking call. 
+
+A blocking start would wait for the WiFi and the MQTT client to connect before returning. This limits the error messages logged and ensures no message is lost during startup.  
+However it means that your application will not be runnign during that time... It is up to you to decide if you want a blocking start.
+
+If you choose to have a non-blocking start, the method `isReady()` can help you determine if the connection to the service is ready to forward messages to the MQTT broker.
+
 
 > **Note**  
 Advanced methods are available if you would like to pass your Wi-Fi credentials through macros or *PlatformIO* initialization scripts.
