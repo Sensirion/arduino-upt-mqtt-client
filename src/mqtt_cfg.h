@@ -9,8 +9,8 @@
  * Values are sourced from mqtt_config.json if configured by the post_script.
  */
 
-#ifndef _MQTT_CONFIG_H_
-#define _MQTT_CONFIG_H_
+#ifndef MQTT_CONFIG_H_
+#define MQTT_CONFIG_H_
 
 #ifndef PIO_ADVANCED_SCRIPTING
 #define MQTT_LWT_TOPIC_OVERRIDE "myTopic/"
@@ -31,4 +31,4 @@
 
 #define WIFI_CHECK_INTERVAL_MS 10000
 
-#endif /* _MQTT_CONFIG_H_ */
+#endif /* MQTT_CONFIG_H_ */
