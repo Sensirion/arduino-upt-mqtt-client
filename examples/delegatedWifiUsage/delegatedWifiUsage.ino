@@ -23,9 +23,11 @@ void setup() {
 
     // Configure the MQTT mailing service
     mqttMailingService.setBrokerURI(broker_uri);
+    // [Optional] set a prefix that will be prepended to the topic defined in the messages
+    mqttMailingService.setGlobalTopicPrefix("myPrefix/id2345/");
     mailbox = mqttMailingService.getMailbox();
 
-    // Uncomment next line for SSL connection
+    // [Optional] Uncomment next line for SSL connection
     // mqttMailingService.setSslCertificate(ssl_cert);
 
     Serial.println("MQTT Mailing Service starting and connecting ....");
@@ -39,10 +41,9 @@ void setup() {
 }
 
 void loop() {
-    // Set payload and topic
-    sprintf(mail.topic, "testtopic/");
-
-    sprintf(mail.payload, "Msg #%i", count);
+    // Set payload and topicSuffix
+    sprintf(mail.topicSuffix, "myTestTopic%i/", count%10);
+    sprintf(mail.payload, "Message #%i", count);
 
     // Dispatch message
     if (xQueueSend(mailbox, &mail, 0) != pdPASS) {

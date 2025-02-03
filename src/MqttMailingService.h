@@ -110,6 +110,14 @@ class __attribute__((unused)) MqttMailingService {
     __attribute__((unused)) void setQOS(int qos);
 
     /**
+     * @brief Set the topic prefix that will automatically be added to all sent messages.
+     * Resulting topic will be: globalPrefix + meassageTopicSuffix
+     *
+     * @param topicPrefix: chosen topic prefix string
+     */
+    __attribute__((unused)) void setGlobalTopicPrefix(const char* topicPrefix);
+
+    /**
      * @brief Set the retain flag for the sent MQTT messages
      *
      * @param flag: the chosen flag as integer
@@ -144,6 +152,7 @@ class __attribute__((unused)) MqttMailingService {
     const char* _sslCert;
     int _qos;
     int _retainFlag;
+    char mGlobalTopicPrefix[128] = "";
     TaskHandle_t _mailmanTaskHandle = nullptr;
     TaskHandle_t _wifiCheckTaskHandle = nullptr;
 

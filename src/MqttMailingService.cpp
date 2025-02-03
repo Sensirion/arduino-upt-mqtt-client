@@ -139,7 +139,18 @@ __attribute__((unused)) void MqttMailingService::setQOS(int qos) {
     _qos = qos;
 }
 
-__attribute__((unused)) void MqttMailingService::setRetainFlag(int retainFlag) {
+__attribute__((unused)) void
+MqttMailingService::setGlobalTopicPrefix(const char* topicPrefix) {
+    if (strlen(topicPrefix) > 128) {
+        ESP_LOGW(TAG,
+                 "Warning: requested global prefix message \"%s\" is too long: %i "
+                 "characters (max %i). It got truncated.",
+                 topicPrefix, strlen(topicPrefix), 128);
+    }
+    strncpy(mGlobalTopicPrefix, topicPrefix, 127);
+}
+
+void MqttMailingService::setRetainFlag(int retainFlag) {
     if (retainFlag < 0 || retainFlag > 1) {
         ESP_LOGW(
             TAG,
@@ -244,16 +255,25 @@ void MqttMailingService::_destroyEspMqttClient() {
                xQueueReceive(pMailingService->_mailbox, &outMail, 0) ==
                    pdTRUE) {
 
+            // Concatenate topic
+            char topic[256];
+            strcpy(topic, pMailingService->mGlobalTopicPrefix);
+            strcat(topic, outMail.topicSuffix);
+
+            ESP_LOGI(pMailingService->TAG, "Sending to topic: %s", topic);
+
             // Forward message in mailbox to the ESP MQTT client
             ESP_ERROR_CHECK_WITHOUT_ABORT(esp_mqtt_client_publish(
-                pMailingService->_espMqttClient, (char*)outMail.topic,
+                pMailingService->_espMqttClient, topic,
                 (char*)outMail.payload, outMail.len, pMailingService->_qos,
                 pMailingService->_retainFlag));
+
+            
 
             ESP_LOGD(
                 pMailingService->TAG,
                 "Forwarded a msg to the MQTT client:\n\tTopic: %s\n\tMsg: %s",
-                outMail.topic, outMail.payload);
+                outMail.topicSuffix, outMail.payload);
             vTaskDelay(pdMS_TO_TICKS(20));
         }
 
