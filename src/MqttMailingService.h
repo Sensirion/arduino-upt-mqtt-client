@@ -5,6 +5,7 @@
 #include "mqtt_cfg.h"
 #include "mqtt_client.h"
 #include <Arduino.h>
+#include <Sensirion_UPT_Core.h>
 
 enum MqttMailingServiceState {
     UNINITIALIZED = 0,
@@ -142,6 +143,54 @@ class __attribute__((unused)) MqttMailingService {
      */
     __attribute__((unused)) bool isReady();
 
+    /**
+     * @brief Set a measurement formatting function
+     *
+     * @param fFmt: the function formatting a Measurement into a string
+     */
+    __attribute__((unused)) void setMeasurementMessageFormatterFn(void (*fFmt)(Measurement, char*));
+
+    /**
+     * @brief Set the function used to define the topic suffix from the Measurement
+     *
+     * @param fFmt: the function transforming a Measurement into a topic suffix
+     */
+    __attribute__((unused)) void setMeasurementToTopicSuffixFn(void (*fFmt)(Measurement, char*));
+
+    /**
+     * @brief Send a message to a given topic.
+     *
+     * @param message: the message as a string. Maximum 256 characters.
+     * @param topicSuffix the topic suffix (will be combined with the global prefix) 
+     * 
+     * @return true is message was successfully sent
+     */
+    __attribute__((unused)) bool sendTextMessage(const char* message, const char* topicSuffix);
+
+    /**
+     * @brief Send a measurement to a given topic.
+     * 
+     * @note Formatter needs to be set first (using setMeasurementMessageFormatterFn)
+     *
+     * @param measurement: the Measurement to send
+     * @param topicSuffix the topic suffix (will be combined with the global prefix) 
+     * 
+     * @return true is message was successfully sent
+     */
+    __attribute__((unused)) bool sendMeasurement(const Measurement measurement, const char* topicSuffix);
+
+    /**
+     * @brief Send a measurement to a topic defined using the registered function.
+     * 
+     * @note Formatter needs to be set first (using setMeasurementMessageFormatterFn)
+     * @note Topic suffix function needs to be set first (using setMeasurementToTopicSuffixFn)
+     *
+     * @param measurement: the Measurement to send
+     * 
+     * @return true is message was successfully sent
+     */
+    __attribute__((unused)) bool sendMeasurement(const Measurement measurement);
+
   private:
     MqttMailingServiceState mState;
     char mBrokerFullURI[64]{};
@@ -154,6 +203,9 @@ class __attribute__((unused)) MqttMailingService {
     char mGlobalTopicPrefix[128] = "";
     TaskHandle_t mMailmanTaskHandle = nullptr;
     TaskHandle_t mWifiCheckTaskHandle = nullptr;
+    // Pointer to formatting function
+    void (*mMeasurementFormatterFn)(Measurement, char*) = nullptr;
+    void (*mTopicSuffixFn)(Measurement, char*) = nullptr;
 
     // ESP MQTT client
     static esp_mqtt_client_handle_t mEspMqttClient;

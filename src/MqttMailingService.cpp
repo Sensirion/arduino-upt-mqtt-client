@@ -179,6 +179,52 @@ __attribute__((unused)) bool MqttMailingService::isReady() {
     return getServiceState() == MqttMailingServiceState::CONNECTED;
 }
 
+void MqttMailingService::setMeasurementMessageFormatterFn(void (*fFmt)(Measurement, char*)) {
+    mMeasurementFormatterFn = fFmt;
+}
+
+void MqttMailingService::setMeasurementToTopicSuffixFn(void (*fFmt)(Measurement, char*)) {
+    mTopicSuffixFn = fFmt;
+}
+
+bool MqttMailingService::sendTextMessage(const char* message,
+                                        const char* topicSuffix) {
+    if (strlen(message) > MQTT_MESSAGE_PAYLOAD_SIZE) {
+        ESP_LOGW(TAG,"Message is too long, message not sent");
+        return false;
+    }
+    if (strlen(topicSuffix) > MQTT_MESSAGE_TOPIC_SUFFIX_SIZE) {
+        ESP_LOGW(TAG,"topicSuffix \"%s\" is too long, message not sent",topicSuffix);
+        return false;
+    }
+    MQTTMessage mail;
+    sprintf(mail.topicSuffix, topicSuffix);
+    sprintf(mail.payload, message);
+
+    return (xQueueSend(mMailbox, &mail, 0) == pdPASS);
+}
+
+bool MqttMailingService::sendMeasurement(const Measurement measurement, const char* topicSuffix) {
+    if (mMeasurementFormatterFn == nullptr){
+        ESP_LOGE(TAG, "Formatter not set, message not sent");
+        return false;
+    }
+    char msgBuffer[MQTT_MESSAGE_PAYLOAD_SIZE]; 
+    mMeasurementFormatterFn(measurement, msgBuffer);
+    return sendTextMessage(msgBuffer,topicSuffix);
+}
+
+bool MqttMailingService::sendMeasurement(const Measurement measurement) {
+    if (mTopicSuffixFn == nullptr){
+        ESP_LOGE(TAG, "TopicSuffixFunction is not set, message not sent");
+        return false;
+    }
+    char topicSuffix[MQTT_MESSAGE_TOPIC_SUFFIX_SIZE]; 
+    mTopicSuffixFn(measurement, topicSuffix);
+
+    return sendMeasurement(measurement,topicSuffix);
+}
+
 /*
  *   Private
  */
