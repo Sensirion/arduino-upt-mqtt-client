@@ -41,16 +41,10 @@ void setup() {
 }
 
 void loop() {
-    // Set payload and topicSuffix
-    sprintf(mail.topicSuffix, "myTestTopic%i/", count%10);
-    sprintf(mail.payload, "Message #%i", count);
-
-    // Dispatch message
-    if (xQueueSend(mailbox, &mail, 0) != pdPASS) {
-        Serial.println("ERROR:\tMailbox is full, mail is lost.");
-    } else {
-        Serial.println("Message successfully added to mailbox");
-    }
+    // Send a message
+    char msg[16];
+    sprintf(msg, "Message #%i", count);
+    mqttMailingService.sendTextMessage(msg, "topic/something/");
 
     count++;
     delay(1000);

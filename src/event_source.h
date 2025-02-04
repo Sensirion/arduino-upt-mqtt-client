@@ -10,9 +10,14 @@
 // MQTT event group
 #define MQTT_CLIENT_TASK_NOT_RUNNING BIT0
 
+// MQTT Message sizes
+#define MQTT_MESSAGE_TOPIC_SUFFIX_SIZE 128
+#define MQTT_MESSAGE_PAYLOAD_SIZE 256
+
+
 struct MQTTMessage {
-    char topicSuffix[128];    // MQTT Topic
-    char payload[256];  // MQTT Payload
+    char topicSuffix[MQTT_MESSAGE_TOPIC_SUFFIX_SIZE];    // MQTT Topic
+    char payload[MQTT_MESSAGE_PAYLOAD_SIZE];  // MQTT Payload
     int len = 0;  // Payload size in bytes. If payload is a string, this value
                   // is automatically computed from the string length if let 0.
 };
