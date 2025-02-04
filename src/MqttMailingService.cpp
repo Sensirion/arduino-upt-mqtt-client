@@ -1,5 +1,4 @@
 #include "MqttMailingService.h"
-#include "event_source.h"
 #include <WiFi.h>
 
 const char* TAG = "MQTT Mail";

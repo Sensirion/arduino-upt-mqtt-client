@@ -1,7 +1,6 @@
 #ifndef UPT_MQTT_MAILING_SERVICE_H
 #define UPT_MQTT_MAILING_SERVICE_H
 
-#include "event_source.h"
 #include "mqtt_cfg.h"
 #include "mqtt_client.h"
 #include <Arduino.h>
