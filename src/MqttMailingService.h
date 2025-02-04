@@ -7,6 +7,12 @@
 #include <Arduino.h>
 #include <Sensirion_UPT_Core.h>
 
+// MQTT Message sizes
+#define MQTT_TOPIC_SUFFIX_MAX_LENGTH 128
+#define MQTT_TOPIC_PREFIX_MAX_LENGTH 128
+
+#define MQTT_MEASUREMENT_MESSAGE_MAX_LENGTH 128
+
 enum MqttMailingServiceState {
     UNINITIALIZED = 0,
     INITIALIZED,
@@ -112,7 +118,9 @@ class __attribute__((unused)) MqttMailingService {
 
     /**
      * @brief Set the topic prefix that will automatically be added to all sent messages.
-     * Resulting topic will be: globalPrefix + meassageTopicSuffix
+     * Resulting topic will be: globalPrefix + messageTopicSuffix
+     * 
+     * @note Max length is MQTT_TOPIC_PREFIX_MAX_LENGTH
      *
      * @param topicPrefix: chosen topic prefix string
      */
@@ -200,8 +208,7 @@ class __attribute__((unused)) MqttMailingService {
     const char* mSslCert;
     int mQos;
     int mRetainFlag;
-    char mGlobalTopicPrefix[128] = "";
-    TaskHandle_t mMailmanTaskHandle = nullptr;
+    char mGlobalTopicPrefix[MQTT_TOPIC_PREFIX_MAX_LENGTH] = "";
     TaskHandle_t mWifiCheckTaskHandle = nullptr;
     // Pointer to formatting function
     void (*mMeasurementFormatterFn)(Measurement, char*) = nullptr;
@@ -213,15 +220,13 @@ class __attribute__((unused)) MqttMailingService {
     void startEspMqttClient();
     void destroyEspMqttClient();
 
-    // Mailbox
-    QueueHandle_t mMailbox = nullptr;
+    //  Forward function
+    bool fwdMqttMessage(const char* topic, const char* message);
 
     // Wi-fi related
     bool mShouldManageWifiConnection = false;
     [[noreturn]] static void wifiCheckTaskCode(__attribute__((unused)) void* arg);
 
-    // Running task definition
-    [[noreturn]] static void mailmanTaskCode(void* pMqttMailingService);
     // Event handler
     static void
     espMqttEventHandler(void* handler_args,
