@@ -1,11 +1,9 @@
-> **Disclaimer:**  
-> The UPT MQTT module is in early development and is not production ready.  
-It is **not yet available through library managers**. Have a look at the open issues to know what to expect. 
-
 # Sensirion UPT MQTT Client
 
 Arduino library for publishing messages to an MQTT broker.   
 It offers a simplified interface to the ESP-IDF mqtt_client libraries and optionaly handles Wi-Fi connectivity for you.
+
+> It is not yet available through library managers.
 
 
 ## Getting started

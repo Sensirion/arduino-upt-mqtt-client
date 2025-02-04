@@ -110,6 +110,14 @@ class __attribute__((unused)) MqttMailingService {
     __attribute__((unused)) void setQOS(int qos);
 
     /**
+     * @brief Set the topic prefix that will automatically be added to all sent messages.
+     * Resulting topic will be: globalPrefix + meassageTopicSuffix
+     *
+     * @param topicPrefix: chosen topic prefix string
+     */
+    __attribute__((unused)) void setGlobalTopicPrefix(const char* topicPrefix);
+
+    /**
      * @brief Set the retain flag for the sent MQTT messages
      *
      * @param flag: the chosen flag as integer
@@ -135,36 +143,36 @@ class __attribute__((unused)) MqttMailingService {
     __attribute__((unused)) bool isReady();
 
   private:
-    static const char* TAG;
-    MqttMailingServiceState _state;
-    char _brokerFullURI[64]{};
-    char _lwtTopic[128]{};
-    char _lwtMessage[256]{};
-    bool _useSsl;
-    const char* _sslCert;
-    int _qos;
-    int _retainFlag;
-    TaskHandle_t _mailmanTaskHandle = nullptr;
-    TaskHandle_t _wifiCheckTaskHandle = nullptr;
+    MqttMailingServiceState mState;
+    char mBrokerFullURI[64]{};
+    char mLwtTopic[128]{};
+    char mLwtMessage[256]{};
+    bool mUseSsl;
+    const char* mSslCert;
+    int mQos;
+    int mRetainFlag;
+    char mGlobalTopicPrefix[128] = "";
+    TaskHandle_t mMailmanTaskHandle = nullptr;
+    TaskHandle_t mWifiCheckTaskHandle = nullptr;
 
     // ESP MQTT client
-    static esp_mqtt_client_handle_t _espMqttClient;
-    void _initEspMqttClient();
-    void _startEspMqttClient();
-    void _destroyEspMqttClient();
+    static esp_mqtt_client_handle_t mEspMqttClient;
+    void initEspMqttClient();
+    void startEspMqttClient();
+    void destroyEspMqttClient();
 
     // Mailbox
-    QueueHandle_t _mailbox = nullptr;
+    QueueHandle_t mMailbox = nullptr;
 
     // Wi-fi related
-    bool _should_manage_wifi_connection = false;
-    [[noreturn]] static void _wifiCheckTask(__attribute__((unused)) void* arg);
+    bool mShouldManageWifiConnection = false;
+    [[noreturn]] static void wifiCheckTaskCode(__attribute__((unused)) void* arg);
 
     // Running task definition
-    [[noreturn]] static void _mailmanTask(void* pMqttMailingService);
+    [[noreturn]] static void mailmanTaskCode(void* pMqttMailingService);
     // Event handler
     static void
-    _espMqttEventHandler(void* handler_args,
+    espMqttEventHandler(void* handler_args,
                          __attribute__((unused)) esp_event_base_t base,
                          int32_t event_id, void* event_data);
 };

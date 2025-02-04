@@ -11,7 +11,7 @@
 #define MQTT_CLIENT_TASK_NOT_RUNNING BIT0
 
 struct MQTTMessage {
-    char topic[128];    // MQTT Topic
+    char topicSuffix[128];    // MQTT Topic
     char payload[256];  // MQTT Payload
     int len = 0;  // Payload size in bytes. If payload is a string, this value
                   // is automatically computed from the string length if let 0.

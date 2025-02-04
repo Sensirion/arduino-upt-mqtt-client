@@ -2,88 +2,88 @@
 #include "event_source.h"
 #include <WiFi.h>
 
-const char* MqttMailingService::TAG = "MQTT Mail";
-esp_mqtt_client_handle_t MqttMailingService::_espMqttClient = nullptr;
+const char* TAG = "MQTT Mail";
+esp_mqtt_client_handle_t MqttMailingService::mEspMqttClient = nullptr;
 
 const uint8_t ssl_cert[] =
     "------BEGIN CERTIFICATE-----\n" MQTT_BROKER_CERTIFICATE_OVERRIDE
     "\n-----END CERTIFICATE-----";
 
 MqttMailingService::MqttMailingService() {
-    _state = MqttMailingServiceState::UNINITIALIZED;
+    mState = MqttMailingServiceState::UNINITIALIZED;
     // Apply default parameters
-    strncpy(_brokerFullURI, MQTT_BROKER_FULL_URI_OVERRIDE, 64);
-    strncpy(_lwtTopic, MQTT_LWT_TOPIC_OVERRIDE, 127);
-    strncpy(_lwtMessage, MQTT_LWT_MSG_OVERRIDE, 255);
-    _sslCert = (char*)ssl_cert;
+    strncpy(mBrokerFullURI, MQTT_BROKER_FULL_URI_OVERRIDE, 64);
+    strncpy(mLwtTopic, MQTT_LWT_TOPIC_OVERRIDE, 127);
+    strncpy(mLwtMessage, MQTT_LWT_MSG_OVERRIDE, 255);
+    mSslCert = (char*)ssl_cert;
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "Simplify"
 #pragma ide diagnostic ignored "UnreachableCode"
-    _useSsl = MQTT_USE_SSL_OVERRIDE == 0 ? false : true;
+    mUseSsl = MQTT_USE_SSL_OVERRIDE == 0 ? false : true;
 #pragma clang diagnostic pop
-    _qos = MQTT_QOS_OVERRIDE;
-    _retainFlag = MQTT_RETAIN_FLAG_OVERRIDE;
+    mQos = MQTT_QOS_OVERRIDE;
+    mRetainFlag = MQTT_RETAIN_FLAG_OVERRIDE;
     // Create the mailbox
-    _mailbox = xQueueCreate(MQTT_DATAQUEUE_LEN, sizeof(MQTTMessage));
+    mMailbox = xQueueCreate(MQTT_DATAQUEUE_LEN, sizeof(MQTTMessage));
 }
 
 MqttMailingService::~MqttMailingService() {
-    if (_mailmanTaskHandle == nullptr) {
-        xTaskAbortDelay(_mailmanTaskHandle);
-        vTaskDelete(_mailmanTaskHandle);
-        _mailmanTaskHandle = nullptr;
+    if (mMailmanTaskHandle == nullptr) {
+        xTaskAbortDelay(mMailmanTaskHandle);
+        vTaskDelete(mMailmanTaskHandle);
+        mMailmanTaskHandle = nullptr;
     }
-    _destroyEspMqttClient();
-    vQueueDelete(_mailbox);
+    destroyEspMqttClient();
+    vQueueDelete(mMailbox);
 
-    if (_should_manage_wifi_connection) {
-        xTaskAbortDelay(_wifiCheckTaskHandle);
-        vTaskDelete(_wifiCheckTaskHandle);
-        _wifiCheckTaskHandle = nullptr;
+    if (mShouldManageWifiConnection) {
+        xTaskAbortDelay(mWifiCheckTaskHandle);
+        vTaskDelete(mWifiCheckTaskHandle);
+        mWifiCheckTaskHandle = nullptr;
     }
 }
 
 void MqttMailingService::start() {
-    if (_state == MqttMailingServiceState::UNINITIALIZED) {
-        _initEspMqttClient();
+    if (mState == MqttMailingServiceState::UNINITIALIZED) {
+        initEspMqttClient();
     }
-    _startEspMqttClient();
+    startEspMqttClient();
 }
 
 __attribute__((unused)) void
 MqttMailingService::startWithDelegatedWiFi(const char* ssid, const char* pass,
                                            const bool shouldBeBlocking) {
 
-    _should_manage_wifi_connection = true;
+    mShouldManageWifiConnection = true;
     WiFi.begin(ssid, pass);
 
     if (shouldBeBlocking) {
-        ESP_LOGI(MqttMailingService::TAG, "Waiting for Wi-Fi connection...");
+        ESP_LOGI(TAG, "Waiting for Wi-Fi connection...");
         // Wait for Wi-Fi connection, since MQTT mailing service
         // can't establish a connection without Wi-Fi.
         while (!WiFi.isConnected()) {
             sleep(1);
         }
-        ESP_LOGD(MqttMailingService::TAG, "Wi-Fi connected");
+        ESP_LOGD(TAG, "Wi-Fi connected");
     }
 
     start();
 
     // Create Wi-Fi monitoring task to ensure reconnection
-    if (_wifiCheckTaskHandle == nullptr) {
-        xTaskCreate(MqttMailingService::_wifiCheckTask, "Wi-Fi Check", 1 * 1024,
-                    nullptr, tskIDLE_PRIORITY + 1, &(_wifiCheckTaskHandle));
-        ESP_LOGI(MqttMailingService::TAG, "WiFi check task launched.");
+    if (mWifiCheckTaskHandle == nullptr) {
+        xTaskCreate(MqttMailingService::wifiCheckTaskCode, "Wi-Fi Check", 1 * 1024,
+                    nullptr, tskIDLE_PRIORITY + 1, &(mWifiCheckTaskHandle));
+        ESP_LOGI(TAG, "WiFi check task launched.");
     }
 
     if (shouldBeBlocking) {
         // Wait until MQTT service connects to broker
-        ESP_LOGD(MqttMailingService::TAG,
+        ESP_LOGD(TAG,
                  "MQTT mailing service is connecting...");
         while (getServiceState() != MqttMailingServiceState::CONNECTED) {
             sleep(1);
         }
-        ESP_LOGD(MqttMailingService::TAG, "MQTT mailing service is connected.");
+        ESP_LOGD(TAG, "MQTT mailing service is connected.");
     }
 }
 
@@ -104,7 +104,7 @@ MqttMailingService::setBrokerURI(const char* brokerURI) {
                  "characters (max %i). It got truncated.",
                  brokerURI, strlen(brokerURI), 63);
     }
-    strncpy(_brokerFullURI, brokerURI, 63);
+    strncpy(mBrokerFullURI, brokerURI, 63);
 }
 
 __attribute__((unused)) void
@@ -115,7 +115,7 @@ MqttMailingService::setLWTTopic(const char* lwtTopic) {
                  "characters (max %i). It got truncated.",
                  lwtTopic, strlen(lwtTopic), 128);
     }
-    strncpy(_lwtTopic, lwtTopic, 127);
+    strncpy(mLwtTopic, lwtTopic, 127);
 }
 
 __attribute__((unused)) void
@@ -126,42 +126,53 @@ MqttMailingService::setLWTMessage(const char* lwtMessage) {
                  "characters (max %i). It got truncated.",
                  lwtMessage, strlen(lwtMessage), 256);
     }
-    strncpy(_lwtMessage, lwtMessage, 255);
+    strncpy(mLwtMessage, lwtMessage, 255);
 }
 
 __attribute__((unused)) void
 MqttMailingService::setSslCertificate(const char* sslCert) {
-    _sslCert = sslCert;
-    _useSsl = true;
+    mSslCert = sslCert;
+    mUseSsl = true;
 }
 
 __attribute__((unused)) void MqttMailingService::setQOS(int qos) {
-    _qos = qos;
+    mQos = qos;
 }
 
-__attribute__((unused)) void MqttMailingService::setRetainFlag(int retainFlag) {
+__attribute__((unused)) void
+MqttMailingService::setGlobalTopicPrefix(const char* topicPrefix) {
+    if (strlen(topicPrefix) > 128) {
+        ESP_LOGW(TAG,
+                 "Warning: requested global prefix message \"%s\" is too long: %i "
+                 "characters (max %i). It got truncated.",
+                 topicPrefix, strlen(topicPrefix), 128);
+    }
+    strncpy(mGlobalTopicPrefix, topicPrefix, 127);
+}
+
+void MqttMailingService::setRetainFlag(int retainFlag) {
     if (retainFlag < 0 || retainFlag > 1) {
         ESP_LOGW(
             TAG,
             "Warning: attempt to set illegal retain flag %i. Reverting to 0.",
             retainFlag);
-        _retainFlag = 0;
+        mRetainFlag = 0;
     } else {
-        _retainFlag = retainFlag;
+        mRetainFlag = retainFlag;
     }
 }
 
 __attribute__((unused)) QueueHandle_t MqttMailingService::getMailbox() const {
-    return _mailbox;
+    return mMailbox;
 }
 
 __attribute__((unused)) MqttMailingServiceState
 MqttMailingService::getServiceState() {
-    return _state;
+    return mState;
 }
 
 __attribute__((unused)) bool MqttMailingService::isReady() {
-    if (_should_manage_wifi_connection) {
+    if (mShouldManageWifiConnection) {
         return WiFi.isConnected() &&
                getServiceState() == MqttMailingServiceState::CONNECTED;
     }
@@ -172,7 +183,7 @@ __attribute__((unused)) bool MqttMailingService::isReady() {
  *   Private
  */
 
-void MqttMailingService::_initEspMqttClient() {
+void MqttMailingService::initEspMqttClient() {
     // Setup mqtt event loop
     esp_event_loop_args_t mqtt_loop_args = {.queue_size = MQTT_EVENT_LOOP_LEN,
                                             .task_name = "MQTT Event Loop",
@@ -185,75 +196,83 @@ void MqttMailingService::_initEspMqttClient() {
 
     // Config
     esp_mqtt_client_config_t mqtt_cfg = {.event_loop_handle = mqtt_loop_handle,
-                                         .uri = _brokerFullURI,
-                                         .lwt_topic = _lwtTopic,
-                                         .lwt_msg = _lwtMessage,
+                                         .uri = mBrokerFullURI,
+                                         .lwt_topic = mLwtTopic,
+                                         .lwt_msg = mLwtMessage,
                                          .disable_auto_reconnect = false};
-    if (_useSsl) {
-        mqtt_cfg.cert_pem = _sslCert;
+    if (mUseSsl) {
+        mqtt_cfg.cert_pem = mSslCert;
     }
-    _espMqttClient = esp_mqtt_client_init(&mqtt_cfg);
-    if (!_espMqttClient) {
+    mEspMqttClient = esp_mqtt_client_init(&mqtt_cfg);
+    if (!mEspMqttClient) {
         ESP_LOGE(TAG, "Fatal error: Could not initiate MQTT Client. Aborting.");
         assert(0);
     }
 
     esp_mqtt_client_register_event(
-        _espMqttClient, static_cast<esp_mqtt_event_id_t>(ESP_EVENT_ANY_ID),
-        _espMqttEventHandler, this);
+        mEspMqttClient, static_cast<esp_mqtt_event_id_t>(ESP_EVENT_ANY_ID),
+        espMqttEventHandler, this);
 
-    _state = MqttMailingServiceState::INITIALIZED;
+    mState = MqttMailingServiceState::INITIALIZED;
     ESP_LOGI(TAG, "ESP MQTT client initialized.");
 }
 
-void MqttMailingService::_startEspMqttClient() {
+void MqttMailingService::startEspMqttClient() {
     esp_err_t ret;
 
-    if (_state == MqttMailingServiceState::CONNECTED ||
-        _state == MqttMailingServiceState::CONNECTING) {
+    if (mState == MqttMailingServiceState::CONNECTED ||
+        mState == MqttMailingServiceState::CONNECTING) {
         // nothing to do
         return;
     }
 
-    ret = esp_mqtt_client_start(_espMqttClient);
+    ret = esp_mqtt_client_start(mEspMqttClient);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start MQTT client");
         return;
     }
-    _state = MqttMailingServiceState::CONNECTING;
+    mState = MqttMailingServiceState::CONNECTING;
     ESP_LOGI(TAG, "MQTT client connecting...");
 }
 
-void MqttMailingService::_destroyEspMqttClient() {
-    _state = MqttMailingServiceState::UNINITIALIZED;
-    esp_mqtt_client_stop(_espMqttClient);
-    esp_mqtt_client_destroy(_espMqttClient);
-    _espMqttClient = nullptr;
+void MqttMailingService::destroyEspMqttClient() {
+    mState = MqttMailingServiceState::UNINITIALIZED;
+    esp_mqtt_client_stop(mEspMqttClient);
+    esp_mqtt_client_destroy(mEspMqttClient);
+    mEspMqttClient = nullptr;
     ESP_LOGI(TAG, "MQTT client has been destroyed.");
 }
 
 /*
  *   MQTT Mailman Task
  */
-[[noreturn]] void MqttMailingService::_mailmanTask(void* arg) {
+[[noreturn]] void MqttMailingService::mailmanTaskCode(void* arg) {
     auto* pMailingService = reinterpret_cast<MqttMailingService*>(arg);
     MQTTMessage outMail;
 
     while (true) {
-        while (pMailingService->_state == MqttMailingServiceState::CONNECTED &&
-               xQueueReceive(pMailingService->_mailbox, &outMail, 0) ==
+        while (pMailingService->mState == MqttMailingServiceState::CONNECTED &&
+               xQueueReceive(pMailingService->mMailbox, &outMail, 0) ==
                    pdTRUE) {
+
+            // Concatenate topic
+            char topic[256];
+            strcpy(topic, pMailingService->mGlobalTopicPrefix);
+            strcat(topic, outMail.topicSuffix);
+
+            ESP_LOGI(TAG, "Sending to topic: %s", topic);
 
             // Forward message in mailbox to the ESP MQTT client
             ESP_ERROR_CHECK_WITHOUT_ABORT(esp_mqtt_client_publish(
-                pMailingService->_espMqttClient, (char*)outMail.topic,
-                (char*)outMail.payload, outMail.len, pMailingService->_qos,
-                pMailingService->_retainFlag));
+                pMailingService->mEspMqttClient, topic,
+                (char*)outMail.payload, outMail.len, pMailingService->mQos,
+                pMailingService->mRetainFlag));
 
-            ESP_LOGD(
-                pMailingService->TAG,
+            
+
+            ESP_LOGD(TAG,
                 "Forwarded a msg to the MQTT client:\n\tTopic: %s\n\tMsg: %s",
-                outMail.topic, outMail.payload);
+                outMail.topicSuffix, outMail.payload);
             vTaskDelay(pdMS_TO_TICKS(20));
         }
 
@@ -261,7 +280,7 @@ void MqttMailingService::_destroyEspMqttClient() {
     }
 }
 
-void MqttMailingService::_espMqttEventHandler(
+void MqttMailingService::espMqttEventHandler(
     void* handler_args, __attribute__((unused)) esp_event_base_t base,
     int32_t event_id, void* event_data) {
     auto* pMailingService = reinterpret_cast<MqttMailingService*>(handler_args);
@@ -269,25 +288,25 @@ void MqttMailingService::_espMqttEventHandler(
 
     switch ((esp_mqtt_event_id_t)event_id) {
         case MQTT_EVENT_CONNECTED:
-            ESP_LOGI(pMailingService->TAG, "ESP MQTT client connected");
-            pMailingService->_state = MqttMailingServiceState::CONNECTED;
+            ESP_LOGI(TAG, "ESP MQTT client connected");
+            pMailingService->mState = MqttMailingServiceState::CONNECTED;
 
             // Start running task if not existing yet
-            if (pMailingService->_mailmanTaskHandle == nullptr) {
-                xTaskCreate(MqttMailingService::_mailmanTask,
+            if (pMailingService->mMailmanTaskHandle == nullptr) {
+                xTaskCreate(MqttMailingService::mailmanTaskCode,
                             "MQTT MsgDispatcher", 5 * 1024,
                             reinterpret_cast<void*>(pMailingService),
                             tskIDLE_PRIORITY + 1,
-                            &(pMailingService->_mailmanTaskHandle));
-                ESP_LOGI(pMailingService->TAG, "Mailman task launched.");
+                            &(pMailingService->mMailmanTaskHandle));
+                ESP_LOGI(TAG, "Mailman task launched.");
             }
             break;
         case MQTT_EVENT_DISCONNECTED:
-            ESP_LOGI(pMailingService->TAG, "ESP MQTT client disconnected");
-            pMailingService->_state = MqttMailingServiceState::DISCONNECTED;
+            ESP_LOGI(TAG, "ESP MQTT client disconnected");
+            pMailingService->mState = MqttMailingServiceState::DISCONNECTED;
             break;
         case MQTT_EVENT_ERROR:
-            ESP_LOGW(pMailingService->TAG,
+            ESP_LOGW(TAG,
                      "ESP MQTT client encountered an error (code %i)",
                      (*event).error_handle->error_type);
             break;
@@ -301,7 +320,7 @@ void MqttMailingService::_espMqttEventHandler(
  * This tasks checks if Wi-Fi is still connected every 10 second
  * and tries to reconnect if Wi-Fi connection is not established.
  */
-void MqttMailingService::_wifiCheckTask(__attribute__((unused)) void* arg) {
+void MqttMailingService::wifiCheckTaskCode(__attribute__((unused)) void* arg) {
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(WIFI_CHECK_INTERVAL_MS));
 
