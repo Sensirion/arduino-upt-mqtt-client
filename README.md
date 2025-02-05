@@ -1,7 +1,8 @@
 # Sensirion UPT MQTT Client
 
-Arduino library for publishing messages to an MQTT broker.   
-It offers a simplified interface to the ESP-IDF mqtt_client libraries and optionaly handles Wi-Fi connectivity for you.
+Arduino library for publishing UPT `Measurements` to an MQTT broker.   
+It offers conveninence method to publish UPT Measurements while simplifying the interface to the ESP-IDF mqtt_client library.
+Optionally it can handle Wi-Fi connectivity.
 
 > It is not yet available through library managers.
 

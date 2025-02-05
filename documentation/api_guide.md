@@ -92,31 +92,41 @@ More advanced configuration options are available and can be found in the header
 
 Note that the LWT must be configured before calling starting the client.
 
-### Create and post a new message
+#### Measurement formatting
+The library lets you define the function used to convert a Measurement object into a message.  
+You can do so using `setMeasurementMessageFormatterFn()`
 
-The MQTT client sends messages to the broker through a freeRTOS queue, which itself is fed by the user.  
-The queue can be obtained through its getter method ```getMailbox()```, and accepts ```DataEvents``` type objects, 
-as defined in ```events_source.h```.  
+A sample formatting function is available in the file `MeasurementFormatting.cpp`.
+You can either choose to use the provided one or define your own.
 
-The code to send a simple string to the broker could look as such:
+This configuration step is **required** if you want to send Measurement objects.
+
+#### Measurement to topic
+In some cases it can be useful to dynamically define the topic based on the metadata of a Measurement.
+
+The library lets you register a function to define the topic based on the given Measurement.  
+You can do so using `setMeasurementToTopicSuffixFn()`. Once configured you are no longer required to provide a topic when using `sendMeasurement`.
+
+A sample function is available in the file `MeasurementFormatting.cpp`.
+You can either choose to use the provided one or define your own.
+
+
+### Send a text message
+Once configured and connected, a message can be sent using `sendTextMessage`:
 
 ```cpp
-mailbox = mqttMailingService.getMailbox();
-
-MQTTMessage mail = {
-    .topic = "myTopic/",
-    .payload = "Hello World",
-};
-
-xQueueSend(mailbox, &mail, 0);
+mqttMailingService.sendTextMessage("message", "topic/");
 ```
 
-Note that for string type payloads, the length of the message is automatically determined by the MQTT client if the 
-corresponding field is left to its default value, 0. For other kinds of data, one must cast it to the ```char *``` type 
-and specify the number of bytes in the field ```.mqttMsg.len```.
-Consider that the queue may fill up faster than the client can dispatch the messages.
+### Send a Measurement
+Once the formatting function configured (see "Measurement formatting"), a `Measurement` can be sent using `sendMeasurement`:
 
-The MQTT client checks the queue for new entries every 100 milliseconds, and attempts to send the messages.
+```cpp
+MqttMailingService.sendMeasurement(myMeasurement, "topic/");
+```
 
+Optionally, a function can be registered to define the topic from the included metadata (see section "Measurement to topic"). Once done the topic can be omitted:
 
-
+```cpp
+MqttMailingService.sendMeasurement(myMeasurement);
+```

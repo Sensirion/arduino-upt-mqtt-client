@@ -1,5 +1,4 @@
 #include "MqttMailingService.h"
-#include "event_source.h"
 #include <WiFi.h>
 
 const char* TAG = "MQTT Mail";
@@ -23,18 +22,10 @@ MqttMailingService::MqttMailingService() {
 #pragma clang diagnostic pop
     mQos = MQTT_QOS_OVERRIDE;
     mRetainFlag = MQTT_RETAIN_FLAG_OVERRIDE;
-    // Create the mailbox
-    mMailbox = xQueueCreate(MQTT_DATAQUEUE_LEN, sizeof(MQTTMessage));
 }
 
 MqttMailingService::~MqttMailingService() {
-    if (mMailmanTaskHandle == nullptr) {
-        xTaskAbortDelay(mMailmanTaskHandle);
-        vTaskDelete(mMailmanTaskHandle);
-        mMailmanTaskHandle = nullptr;
-    }
     destroyEspMqttClient();
-    vQueueDelete(mMailbox);
 
     if (mShouldManageWifiConnection) {
         xTaskAbortDelay(mWifiCheckTaskHandle);
@@ -162,10 +153,6 @@ void MqttMailingService::setRetainFlag(int retainFlag) {
     }
 }
 
-__attribute__((unused)) QueueHandle_t MqttMailingService::getMailbox() const {
-    return mMailbox;
-}
-
 __attribute__((unused)) MqttMailingServiceState
 MqttMailingService::getServiceState() {
     return mState;
@@ -187,21 +174,24 @@ void MqttMailingService::setMeasurementToTopicSuffixFn(void (*fFmt)(Measurement,
     mTopicSuffixFn = fFmt;
 }
 
+bool MqttMailingService::fwdMqttMessage(const char* topic, const char* message){
+    // Forward message in mailbox to the ESP MQTT client
+    return esp_mqtt_client_enqueue(mEspMqttClient, topic, message, 0, mQos, mRetainFlag, true) != -1;
+}
+
 bool MqttMailingService::sendTextMessage(const char* message,
                                         const char* topicSuffix) {
-    if (strlen(message) > MQTT_MESSAGE_PAYLOAD_SIZE) {
-        ESP_LOGW(TAG,"Message is too long, message not sent");
-        return false;
-    }
-    if (strlen(topicSuffix) > MQTT_MESSAGE_TOPIC_SUFFIX_SIZE) {
+    if (strlen(topicSuffix) > MQTT_TOPIC_SUFFIX_MAX_LENGTH) {
         ESP_LOGW(TAG,"topicSuffix \"%s\" is too long, message not sent",topicSuffix);
         return false;
     }
-    MQTTMessage mail;
-    sprintf(mail.topicSuffix, topicSuffix);
-    sprintf(mail.payload, message);
 
-    return (xQueueSend(mMailbox, &mail, 0) == pdPASS);
+    // Assemble topic: prefix + suffix
+    char topic[MQTT_TOPIC_PREFIX_MAX_LENGTH + MQTT_TOPIC_SUFFIX_MAX_LENGTH];
+    strcpy(topic, mGlobalTopicPrefix);
+    strcat(topic, topicSuffix);
+
+    return fwdMqttMessage(topic, message);
 }
 
 bool MqttMailingService::sendMeasurement(const Measurement measurement, const char* topicSuffix) {
@@ -209,7 +199,7 @@ bool MqttMailingService::sendMeasurement(const Measurement measurement, const ch
         ESP_LOGE(TAG, "Formatter not set, message not sent");
         return false;
     }
-    char msgBuffer[MQTT_MESSAGE_PAYLOAD_SIZE]; 
+    char msgBuffer[MQTT_MEASUREMENT_MESSAGE_MAX_LENGTH]; 
     mMeasurementFormatterFn(measurement, msgBuffer);
     return sendTextMessage(msgBuffer,topicSuffix);
 }
@@ -219,7 +209,7 @@ bool MqttMailingService::sendMeasurement(const Measurement measurement) {
         ESP_LOGE(TAG, "TopicSuffixFunction is not set, message not sent");
         return false;
     }
-    char topicSuffix[MQTT_MESSAGE_TOPIC_SUFFIX_SIZE]; 
+    char topicSuffix[MQTT_TOPIC_SUFFIX_MAX_LENGTH]; 
     mTopicSuffixFn(measurement, topicSuffix);
 
     return sendMeasurement(measurement,topicSuffix);
@@ -289,43 +279,6 @@ void MqttMailingService::destroyEspMqttClient() {
     ESP_LOGI(TAG, "MQTT client has been destroyed.");
 }
 
-/*
- *   MQTT Mailman Task
- */
-[[noreturn]] void MqttMailingService::mailmanTaskCode(void* arg) {
-    auto* pMailingService = reinterpret_cast<MqttMailingService*>(arg);
-    MQTTMessage outMail;
-
-    while (true) {
-        while (pMailingService->mState == MqttMailingServiceState::CONNECTED &&
-               xQueueReceive(pMailingService->mMailbox, &outMail, 0) ==
-                   pdTRUE) {
-
-            // Concatenate topic
-            char topic[256];
-            strcpy(topic, pMailingService->mGlobalTopicPrefix);
-            strcat(topic, outMail.topicSuffix);
-
-            ESP_LOGI(TAG, "Sending to topic: %s", topic);
-
-            // Forward message in mailbox to the ESP MQTT client
-            ESP_ERROR_CHECK_WITHOUT_ABORT(esp_mqtt_client_publish(
-                pMailingService->mEspMqttClient, topic,
-                (char*)outMail.payload, outMail.len, pMailingService->mQos,
-                pMailingService->mRetainFlag));
-
-            
-
-            ESP_LOGD(TAG,
-                "Forwarded a msg to the MQTT client:\n\tTopic: %s\n\tMsg: %s",
-                outMail.topicSuffix, outMail.payload);
-            vTaskDelay(pdMS_TO_TICKS(20));
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(MQTT_MAILBOX_COLLECTION_INTERVAL_MS));
-    }
-}
-
 void MqttMailingService::espMqttEventHandler(
     void* handler_args, __attribute__((unused)) esp_event_base_t base,
     int32_t event_id, void* event_data) {
@@ -336,16 +289,6 @@ void MqttMailingService::espMqttEventHandler(
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "ESP MQTT client connected");
             pMailingService->mState = MqttMailingServiceState::CONNECTED;
-
-            // Start running task if not existing yet
-            if (pMailingService->mMailmanTaskHandle == nullptr) {
-                xTaskCreate(MqttMailingService::mailmanTaskCode,
-                            "MQTT MsgDispatcher", 5 * 1024,
-                            reinterpret_cast<void*>(pMailingService),
-                            tskIDLE_PRIORITY + 1,
-                            &(pMailingService->mMailmanTaskHandle));
-                ESP_LOGI(TAG, "Mailman task launched.");
-            }
             break;
         case MQTT_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "ESP MQTT client disconnected");

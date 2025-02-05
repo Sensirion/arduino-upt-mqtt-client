@@ -5,13 +5,10 @@ static void defaultMeasurementToMessage(Measurement m, char * msgBuffer){
 }
 
 static void defaultMeasurementToTopicSuffix(Measurement m, char * topicBuffer){
-    const char* sensorFamily_ =
-        deviceLabel(m.metaData.platform, m.metaData.deviceType);
     const char* sensorName_ =
         deviceLabel(m.metaData.platform, m.metaData.deviceType);
     const uint64_t sensorID_ = m.metaData.deviceID;
     const char* physQty_ = quantityOf(m.signalType);
 
-    sprintf(topicBuffer,"%s/%s/%" PRIu64 "/%s/%s", sensorFamily_, sensorName_, sensorID_,
-            physQty_, sensorFamily_);
+    sprintf(topicBuffer,"%s/%" PRIu64 "/%s", sensorName_, sensorID_, physQty_);
 }

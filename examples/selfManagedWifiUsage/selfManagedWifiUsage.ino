@@ -1,6 +1,7 @@
 #include "MqttMailingService.h"
 #include <Arduino.h>
 #include <WiFi.h>
+#include <MeasurementFormatting.cpp>
 
 /*
     In this usage example, the main application is managing the Wi-Fi connection
@@ -9,8 +10,6 @@
 */
 
 MqttMailingService mqttMailingService;
-QueueHandle_t mailbox;
-MQTTMessage mail;
 int count = 0;
 
 // Configuration
@@ -21,6 +20,9 @@ const char* broker_uri = "mqtt://mqtt.someserver.com:1883";
 const char ssl_cert[] =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
 
+Measurement getSampleMeasurement();
+Measurement dummyMeasurement = getSampleMeasurement();
+
 void setup() {
     Serial.begin(115200);
     sleep(1);
@@ -28,12 +30,16 @@ void setup() {
     // Configure the MQTT mailing service
     mqttMailingService.setBrokerURI(broker_uri);
     // [Optional] set a prefix that will be prepended to the topic defined in the messages
-    mqttMailingService.setGlobalTopicPrefix("myPrefix/id2345/");
+    mqttMailingService.setGlobalTopicPrefix("myPrefix/deviceID2345/");
 
     // [Optional] Uncomment next line for SSL connection
     // mqttMailingService.setSslCertificate(ssl_cert);
 
-    mailbox = mqttMailingService.getMailbox();
+    // Set a formatting function to be able to send Measurements
+    mqttMailingService.setMeasurementMessageFormatterFn(&defaultMeasurementToMessage);
+
+    // [Optional] Set a function to automatically define the topic based on passed Measurement
+    mqttMailingService.setMeasurementToTopicSuffixFn(&defaultMeasurementToTopicSuffix);
 
     // Connect to Wi-Fi
     WiFi.begin(ssid, password);
@@ -47,14 +53,28 @@ void setup() {
     mqttMailingService.start();
 
     Serial.println("setup() complete.");
+    mqttMailingService.sendTextMessage("Device connected !", "statusTopic/");
 }
 
 void loop() {
-    // Send a message
-    char msg[16];
-    sprintf(msg, "Message #%i", count);
-    mqttMailingService.sendTextMessage(msg, "topic/something/");
+    // Update measurement time and send to MQTT.
+    dummyMeasurement.dataPoint.t_offset = count*1000;
+    mqttMailingService.sendMeasurement(dummyMeasurement);
 
     count++;
     delay(1000);
+}
+
+/**
+ * Returns a dummy measurement filled with realistic data combination
+ */
+Measurement getSampleMeasurement(){
+    Measurement m;
+    m.dataPoint.t_offset = 0;
+    m.dataPoint.value = 100.0;
+    m.signalType = SignalType::CO2_PARTS_PER_MILLION;
+    m.metaData.deviceID = 932780134865341212;
+    m.metaData.deviceType.sensorType = SensorType::SCD4X;
+    m.metaData.platform = DevicePlatform::WIRED;
+    return m;
 }
