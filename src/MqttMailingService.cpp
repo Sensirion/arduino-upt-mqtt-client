@@ -187,7 +187,7 @@ bool MqttMailingService::sendTextMessage(const char* message,
     }
 
     // Assemble topic: prefix + suffix
-    char topic[256];
+    char topic[MQTT_TOPIC_PREFIX_MAX_LENGTH + MQTT_TOPIC_SUFFIX_MAX_LENGTH];
     strcpy(topic, mGlobalTopicPrefix);
     strcat(topic, topicSuffix);
 
