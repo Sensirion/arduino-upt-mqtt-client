@@ -3,10 +3,10 @@ name: PlatformIO Library
 on:
   pull_request:
     branches:
-      - master
+      - main
   push:
     branches:
-      - master
+      - main
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
 
@@ -16,11 +16,11 @@ jobs:
     with:
       pio-environment-list: '["selfManagedWifiUsage", "delegatedWifiUsage"]'
 
-  PilatformIO-Build:
+  PlatformIO-Build:
     uses: sensirion/.github/.github/workflows/upt.platformio.build.yml@main
     needs: PlatformIO-Check
     with:
-      pio-environment-list: '["selfManagedWifUsage", "delegatedWifiUsage"]'
+      pio-environment-list: '["selfManagedWifiUsage", "delegatedWifiUsage"]'
 
   PlatformIO-Package:
     if: ${{ (github.ref_type != 'tag') && (github.ref_name == 'master') }}
