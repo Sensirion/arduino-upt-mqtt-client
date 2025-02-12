@@ -43,4 +43,4 @@ This library uses the following dependencies.
 (In particular, the [Wi-Fi library](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/wifi.html),
 [message logging](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html) and
 [MQTT client](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/mqtt.html#api-reference)) \
-__Caution__: the ArduinoEspressif implementation of the ESP MQTT Client does not match the official API documentation!
+* [Sensirion UPT Core](https://github.com/Sensirion/arduino-upt-core)
