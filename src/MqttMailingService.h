@@ -23,6 +23,7 @@ enum MqttMailingServiceState {
 /* Class managing MQTT message dispatch. Optionally manages Wi-Fi connection. */
 class __attribute__((unused)) MqttMailingService {
   public:
+
     MqttMailingService();
     ~MqttMailingService();
 
@@ -69,18 +70,35 @@ class __attribute__((unused)) MqttMailingService {
     __attribute__((unused)) void startWithDelegatedWiFi();
 
     /**
-     * @brief Sets the broker URI used to send the MQTT messages. It will
-     *        overwrite the broker URI taken from the configuration.
+     * @brief Sets the broker URI used to send the MQTT messages.
      *
      * @note Must be called before start()
      *
-     * @param uri: The chosen broker URI
+     * @param uri: The chosen broker URI (e.g. mqtt://mybroker.com:1883), max 63 characters long
+     * @return True if broker URI is set successfuly, False if provided uri is too long
      */
-    __attribute__((unused)) void setBrokerURI(const char* uri);
+    __attribute__((unused)) bool setBrokerURI(const char* uri);
 
     /**
-     * @brief Sets the Last Will Testament (LWT) topic.It will
-     *        overwrite the LWT topic taken from the configuration.
+     * @brief Sets the broker URI used to send the MQTT messages.
+     *        If you set the parameter hasSsl to True, you 
+     *        need to configure the Ssl certificate by either calling
+     *        setSslCertificate() or setting the environment variable and calling enableSsl().
+     *        If you need to configure a special server port other than the MQTT default ports
+     *        (1883 without Ssl, 8883 with Ssl) use setBrokerURI().
+     *  
+     * @note Must be called before start()
+     *
+     * @param brokerDomain: domain name of your MQTT broker (e.g. mymqttbroker.com)
+     * @param hasSsl: True if your broker uses SSL, False otherwise 
+     * @return True if broker URI is set successfuly, False if provided brokerDomain is too long
+     */
+    __attribute__((unused)) bool setBroker(const char* brokerDomain, 
+                                           const bool hasSsl);
+
+
+    /**
+     * @brief Sets the Last Will Testament (LWT) topic.
      *
      * @note Must be called before start()
      *
@@ -89,8 +107,7 @@ class __attribute__((unused)) MqttMailingService {
     __attribute__((unused)) void setLWTTopic(const char* topic);
 
     /**
-     * @brief Sets the Last Will Testament (LWT) message.It will
-     *        overwrite the LWT message taken from the configuration.
+     * @brief Sets the Last Will Testament (LWT) message.
      *
      * @note Must be called before start()
      *
@@ -98,8 +115,18 @@ class __attribute__((unused)) MqttMailingService {
      */
     __attribute__((unused)) void setLWTMessage(const char* msg);
 
+
     /**
-     * @brief Set the Ssl Certificate of the MQTT broker
+     * @brief Set size of MQTT event queue size.
+     * 
+     * @note needs to be called before start()
+     *
+     * @param queueSize: the chosen size for event queue as integer, default is 20.
+     */
+    __attribute__((unused)) void setMqttEventLoopSize(int queueSize);
+
+    /**
+     * @brief Set the Ssl Certificate of the MQTT broker and enables SSL
      *
      * @note The memory for the certificate needs to be managed by
      *       the callee.
@@ -107,6 +134,17 @@ class __attribute__((unused)) MqttMailingService {
      * @param sslCert: The root certificate of the MQTT broker.
      */
     __attribute__((unused)) void setSslCertificate(const char* sslCert);
+
+        /**
+     * @brief Enable Ssl and set the Ssl Certificate of the MQTT broker
+     *        to the one stored in MQTT_BROKER_CERTIFICATE_OVERRIDE
+     *
+     * @note Setting MQTT_BROKER_CERTIFICATE_OVERRIDE needs to be managed by
+     *       the callee.
+     *
+     */
+    __attribute__((unused)) void enableSsl();
+
 
     /**
      * @brief Set the Quality of Service (QoS) for the sent MQTT messages
@@ -207,6 +245,7 @@ class __attribute__((unused)) MqttMailingService {
     const char* mSslCert;
     int mQos;
     int mRetainFlag;
+    int mMqttEventLoopSize;
     char mGlobalTopicPrefix[MQTT_TOPIC_PREFIX_MAX_LENGTH] = "";
     TaskHandle_t mWifiCheckTaskHandle = nullptr;
     // Pointer to formatting function

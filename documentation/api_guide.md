@@ -66,31 +66,42 @@ The library will automatically attempt reconnection on the configured AP when th
 The address of the MQTT broker can be configured as follows:
 
 ```cpp
-const char* broker_uri = "mqtt://mqtt.someserver.com:1883";
-mqttMailingService.setBrokerURI(broker_uri);
+const char* brokerDomain = "mqtt.someserver.com";
+mqttMailingService.setBroker(brokerDomain, false);
+```
+
+If you need control over the port, use the following API where you can pass the full broker URI:
+
+```cpp
+const char* brokerUri = "mqtt://mqtt.someserver.com:1883";
+mqttMailingService.setBrokerURI(brokerUri);
 ```
 
 #### SSL connection to broker
 To connect to mqtt over ssl, update the following configurations:
 
-* Use the `mqtts` protocol and `8883` port (default ssl port). This can be changed in mqtt_config.json for PlatformIO, 
-  in the mqtt_cfg.h file or through the `setBrokerURI` API.
-* Configure the ssl root certificate. The certificate can be configured in the mqtt_config.json or by using 
-  the `MQTT_BROKER_CERTIFICATE_OVERRIDE`environment variable. In those cases do not include the `BEGIN/END CERTIFICATE`
-  headers.\
-  If configured in the `mqtt_cfg.h` make sure to also enable ssl with `MQTT_USE_SSL_OVERRIDE`.
-  The ssl certificate can also be configured through the `setSslCertificate` API. For this API, you have to include 
-  the certificate headers.\
-  When a certificate is configured through the API, ssl is automatically enabled.
+* Use the `mqtts` protocol and `8883` port (default ssl port). This can be changed through the `setBroker` or `setBrokerURI` API.
+
+  ```cpp
+  const char* brokerDomain = "mqtt.someserver.com";
+  mqttMailingService.setBroker(brokerDomain, true);
+  ```
+
+* Configure the ssl root certificate. The certificate can be configured by using 
+  the `MQTT_BROKER_CERTIFICATE_OVERRIDE` environment variable. In this case, do not include the `BEGIN/END CERTIFICATE`
+  headers. Enable SSL by using the `enableSsl` API.\
+  Alternative: The ssl certificate can also be configured through the `setSslCertificate` API. For this API, you have to include 
+  the certificate headers. This API call automatically enableds SSL. \
 
 
 #### LWT, QoS, ...
-More advanced configuration options are available and can be found in the header file. The options currently implemented are: 
+More advanced configuration options are available and can be found in the API. The options currently implemented are: 
 - Last Will & Testament (LWT) message and topic
+- MQTT Event Loop Size
 - Quality-of-Service (QOS) 
 - Retain Flag
 
-Note that the LWT must be configured before calling starting the client.
+Note that those API calls must be perfomed before starting the client.
 
 #### Measurement formatting
 The library lets you define the function used to convert a Measurement object into a message.  
