@@ -1,6 +1,11 @@
 #include "MqttMailingService.h"
 #include <WiFi.h>
 
+#ifndef WIFI_CHECK_INTERVAL_MS
+#define WIFI_CHECK_INTERVAL_MS 10000
+#endif
+
+
 const char* TAG = "MQTT Mail";
 esp_mqtt_client_handle_t MqttMailingService::mEspMqttClient = nullptr;
 
@@ -10,6 +15,7 @@ const uint8_t ssl_cert[] =
 
 const uint8_t MAX_URI_LENGTH = 63;
 const uint8_t DEFAULT_MQTT_EVENT_LOOP_SIZE = 20;
+
 
 MqttMailingService::MqttMailingService() {
     mState = MqttMailingServiceState::UNINITIALIZED;

@@ -28,8 +28,4 @@
 #define WIFI_PW_OVERRIDE "ConnectToTheAP,IWill"
 #endif
 
-#ifndef WIFI_CHECK_INTERVAL_MS
-#define WIFI_CHECK_INTERVAL_MS 10000
-#endif
-
 #endif /* MQTT_CONFIG_H_ */
