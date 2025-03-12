@@ -11,15 +11,18 @@
 
 /** 
  * 
- * make sure to call `enableWifi and setBroker with parameter hasSsl set to true
- * to enabled Ssl 
+ * Call `setBroker` API with parameter hasSsl set to true to enabled SSL.
+ * You do not need to include the `BEGIN/END CERTIFICATE` headers.
  */ 
 #ifndef MQTT_BROKER_CERTIFICATE_OVERRIDE
 #define MQTT_BROKER_CERTIFICATE_OVERRIDE ""
 #endif
 
 
-/** WiFi SSID and PW and check interval are only used in case you use the `startWithDelegatedWiFi` API */
+/** 
+ * WiFi SSID and PW and check interval are only used in case you 
+ * use the `startWithDelegatedWiFi` API.
+ */
 #ifndef WIFI_SSID_OVERRIDE
 #define WIFI_SSID_OVERRIDE "Obi-WLAN Kenobi"
 #endif

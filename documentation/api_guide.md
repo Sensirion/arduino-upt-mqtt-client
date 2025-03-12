@@ -89,9 +89,9 @@ To connect to mqtt over ssl, update the following configurations:
 
 * Configure the ssl root certificate. The certificate can be configured by using 
   the `MQTT_BROKER_CERTIFICATE_OVERRIDE` environment variable. In this case, do not include the `BEGIN/END CERTIFICATE`
-  headers. Enable SSL by using the `enableSsl` API.\
+  headers. Enable SSL by using the `enableSsl` API.
   Alternative: The ssl certificate can also be configured through the `setSslCertificate` API. For this API, you have to include 
-  the certificate headers. This API call automatically enableds SSL. \
+  the certificate headers. This API call automatically enableds SSL.
 
 
 #### LWT, QoS, ...
@@ -101,7 +101,7 @@ More advanced configuration options are available and can be found in the API. T
 - Quality-of-Service (QOS) 
 - Retain Flag
 
-Note that those API calls must be perfomed before starting the client.
+Note that some of those API calls must be perfomed before starting the client, details can be found in the API description.
 
 #### Measurement formatting
 The library lets you define the function used to convert a Measurement object into a message.  
