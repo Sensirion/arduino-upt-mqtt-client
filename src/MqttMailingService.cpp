@@ -216,7 +216,7 @@ void MqttMailingService::setMeasurementToTopicSuffixFn(void (*fFmt)(Measurement,
 
 bool MqttMailingService::fwdMqttMessage(const char* topic, const char* message){
     // Forward message in mailbox to the ESP MQTT client
-    return esp_mqtt_client_enqueue(mEspMqttClient, topic, message, 0, mQos, mRetainFlag, true) != -1;
+    return esp_mqtt_client_publish(mEspMqttClient, topic, message, 0, mQos, mRetainFlag) != -1;
 }
 
 bool MqttMailingService::sendTextMessage(const char* message,
@@ -260,19 +260,7 @@ bool MqttMailingService::sendMeasurement(const Measurement measurement) {
  */
 
 void MqttMailingService::initEspMqttClient() {
-    // Setup mqtt event loop
-    esp_event_loop_args_t mqtt_loop_args = {.queue_size = mMqttEventLoopSize,
-                                            .task_name = "MQTT Event Loop",
-                                            .task_priority =
-                                                uxTaskPriorityGet(nullptr),
-                                            .task_stack_size = 2 * 1024,
-                                            .task_core_id = tskNO_AFFINITY};
-    esp_event_loop_handle_t mqtt_loop_handle;
-    esp_event_loop_create(&mqtt_loop_args, &mqtt_loop_handle);
-
-    // Config
-    esp_mqtt_client_config_t mqtt_cfg = {.event_loop_handle = mqtt_loop_handle,
-                                         .uri = mBrokerFullURI,
+    esp_mqtt_client_config_t mqtt_cfg = {.uri = mBrokerFullURI,
                                          .lwt_topic = mLwtTopic,
                                          .lwt_msg = mLwtMessage,
                                          .disable_auto_reconnect = false};
