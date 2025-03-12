@@ -13,14 +13,13 @@ const uint8_t ssl_cert[] =
     "------BEGIN CERTIFICATE-----\n" MQTT_BROKER_CERTIFICATE_OVERRIDE
     "\n-----END CERTIFICATE-----";
 
-const uint8_t MAX_URI_LENGTH = 63;
 const uint8_t DEFAULT_MQTT_EVENT_LOOP_SIZE = 20;
 
 
 MqttMailingService::MqttMailingService() {
     mState = MqttMailingServiceState::UNINITIALIZED;
     // Apply default parameters
-    strncpy(mBrokerFullURI, "mqtt://mymqttbroker.com:1883", MAX_URI_LENGTH);
+    mBrokerFullURI[0] = '\0';
     strncpy(mLwtTopic, "defaultTopic/", 127);
     strncpy(mLwtMessage, "The MQTT Mailman unexpectedly disconnected.", 255);
     mSslCert = "";
@@ -106,16 +105,24 @@ MqttMailingService::setBrokerURI(const char* brokerURI) {
     return true;
 }
 
-__attribute__((unused)) bool setBroker(const char* brokerDomain, const bool hasSsl) {
-        char fullBrokerUri[MAX_URI_LENGTH + 1];
-        const char* protocol = hasSsl ? "mqtts" : "mqtt";
-        const int mqttPort = hasSsl ? 8883 : 1883;
-        if(sprintf(fullBrokerUri, "%s://%s:%d", protocol, brokerDomain, mqttPort) > 0) {
+__attribute__((unused)) bool MqttMailingService::setBroker(const char* brokerDomain, const bool hasSsl) {
+        const int maxDomainLength = MAX_URI_LENGTH - 8 - 5;
+        if (strlen(brokerDomain) > maxDomainLength) {
             ESP_LOGW(TAG,
                 "Error: requested broker Domain \"%s\" is too long: %i "
                  "characters (max %i).",
-                brokerDomain, strlen(brokerDomain), MAX_URI_LENGTH - 8 - 5);
+                brokerDomain, strlen(brokerDomain), maxDomainLength);
             return false;
+        }
+        
+        if(hasSsl) {
+            strcpy(mBrokerFullURI, "mqtts://");
+            strcat(mBrokerFullURI, brokerDomain);
+            strcat(mBrokerFullURI, ":8883");
+        } else {
+            strcpy(mBrokerFullURI, "mqtt://");
+            strcat(mBrokerFullURI, brokerDomain);
+            strcat(mBrokerFullURI, ":1883");
         }
         return true;
     }

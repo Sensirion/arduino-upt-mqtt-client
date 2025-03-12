@@ -23,6 +23,7 @@ enum MqttMailingServiceState {
 /* Class managing MQTT message dispatch. Optionally manages Wi-Fi connection. */
 class __attribute__((unused)) MqttMailingService {
   public:
+    static const uint8_t MAX_URI_LENGTH = 63;
 
     MqttMailingService();
     ~MqttMailingService();
@@ -238,7 +239,7 @@ class __attribute__((unused)) MqttMailingService {
 
   private:
     MqttMailingServiceState mState;
-    char mBrokerFullURI[64]{};
+    char mBrokerFullURI[MAX_URI_LENGTH + 1]{};
     char mLwtTopic[128]{};
     char mLwtMessage[256]{};
     bool mUseSsl;
