@@ -1,6 +1,11 @@
 #include "MqttMailingService.h"
 #include <WiFi.h>
 
+#ifndef WIFI_CHECK_INTERVAL_MS
+#define WIFI_CHECK_INTERVAL_MS 10000
+#endif
+
+
 const char* TAG = "MQTT Mail";
 esp_mqtt_client_handle_t MqttMailingService::mEspMqttClient = nullptr;
 
@@ -8,20 +13,21 @@ const uint8_t ssl_cert[] =
     "------BEGIN CERTIFICATE-----\n" MQTT_BROKER_CERTIFICATE_OVERRIDE
     "\n-----END CERTIFICATE-----";
 
+const uint8_t MAX_URI_LENGTH = 63;
+const uint8_t DEFAULT_MQTT_EVENT_LOOP_SIZE = 20;
+
+
 MqttMailingService::MqttMailingService() {
     mState = MqttMailingServiceState::UNINITIALIZED;
     // Apply default parameters
-    strncpy(mBrokerFullURI, MQTT_BROKER_FULL_URI_OVERRIDE, 64);
-    strncpy(mLwtTopic, MQTT_LWT_TOPIC_OVERRIDE, 127);
-    strncpy(mLwtMessage, MQTT_LWT_MSG_OVERRIDE, 255);
-    mSslCert = (char*)ssl_cert;
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "Simplify"
-#pragma ide diagnostic ignored "UnreachableCode"
-    mUseSsl = MQTT_USE_SSL_OVERRIDE == 0 ? false : true;
-#pragma clang diagnostic pop
-    mQos = MQTT_QOS_OVERRIDE;
-    mRetainFlag = MQTT_RETAIN_FLAG_OVERRIDE;
+    strncpy(mBrokerFullURI, "mqtt://mymqttbroker.com:1883", MAX_URI_LENGTH);
+    strncpy(mLwtTopic, "defaultTopic/", 127);
+    strncpy(mLwtMessage, "The MQTT Mailman unexpectedly disconnected.", 255);
+    mSslCert = "";
+    mUseSsl = false;
+    mQos = 0;
+    mRetainFlag = 0;
+    mMqttEventLoopSize = DEFAULT_MQTT_EVENT_LOOP_SIZE;
 }
 
 MqttMailingService::~MqttMailingService() {
@@ -87,16 +93,32 @@ __attribute__((unused)) void MqttMailingService::startWithDelegatedWiFi() {
     startWithDelegatedWiFi(WIFI_SSID_OVERRIDE, WIFI_PW_OVERRIDE, false);
 }
 
-__attribute__((unused)) void
+__attribute__((unused)) bool
 MqttMailingService::setBrokerURI(const char* brokerURI) {
-    if (strlen(brokerURI) > 64) {
+    if (strlen(brokerURI) > MAX_URI_LENGTH) {
         ESP_LOGW(TAG,
-                 "Warning: requested broker URI \"%s\" is too long: %i "
-                 "characters (max %i). It got truncated.",
-                 brokerURI, strlen(brokerURI), 63);
+                 "Error: requested broker URI \"%s\" is too long: %i "
+                 "characters (max %i).",
+                 brokerURI, strlen(brokerURI), MAX_URI_LENGTH);
+        return false;
     }
-    strncpy(mBrokerFullURI, brokerURI, 63);
+    strncpy(mBrokerFullURI, brokerURI, MAX_URI_LENGTH); 
+    return true;
 }
+
+__attribute__((unused)) bool setBroker(const char* brokerDomain, const bool hasSsl) {
+        char fullBrokerUri[MAX_URI_LENGTH + 1];
+        const char* protocol = hasSsl ? "mqtts" : "mqtt";
+        const int mqttPort = hasSsl ? 8883 : 1883;
+        if(sprintf(fullBrokerUri, "%s://%s:%d", protocol, brokerDomain, mqttPort) > 0) {
+            ESP_LOGW(TAG,
+                "Error: requested broker Domain \"%s\" is too long: %i "
+                 "characters (max %i).",
+                brokerDomain, strlen(brokerDomain), MAX_URI_LENGTH - 8 - 5);
+            return false;
+        }
+        return true;
+    }
 
 __attribute__((unused)) void
 MqttMailingService::setLWTTopic(const char* lwtTopic) {
@@ -120,9 +142,20 @@ MqttMailingService::setLWTMessage(const char* lwtMessage) {
     strncpy(mLwtMessage, lwtMessage, 255);
 }
 
+__attribute__((unused)) void 
+    MqttMailingService::setMqttEventLoopSize(int loopSize) {
+        mMqttEventLoopSize = loopSize;
+    }
+
 __attribute__((unused)) void
 MqttMailingService::setSslCertificate(const char* sslCert) {
     mSslCert = sslCert;
+    mUseSsl = true;
+}
+
+__attribute__((unused)) void
+MqttMailingService::enableSsl() {
+    mSslCert = (char*)ssl_cert;
     mUseSsl = true;
 }
 
@@ -221,7 +254,7 @@ bool MqttMailingService::sendMeasurement(const Measurement measurement) {
 
 void MqttMailingService::initEspMqttClient() {
     // Setup mqtt event loop
-    esp_event_loop_args_t mqtt_loop_args = {.queue_size = MQTT_EVENT_LOOP_LEN,
+    esp_event_loop_args_t mqtt_loop_args = {.queue_size = mMqttEventLoopSize,
                                             .task_name = "MQTT Event Loop",
                                             .task_priority =
                                                 uxTaskPriorityGet(nullptr),
