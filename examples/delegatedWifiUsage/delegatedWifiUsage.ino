@@ -50,11 +50,15 @@ void setup() {
 
 void loop() {
     // Update measurement time and send to MQTT.
-    dummyMeasurement.dataPoint.t_offset = count*1000;
-    mqttMailingService.sendMeasurement(dummyMeasurement);
+    dummyMeasurement.dataPoint.t_offset = count*10;
+    bool successful = mqttMailingService.sendMeasurement(dummyMeasurement);
+
+    if(!successful){
+        Serial.println("Failed to send measurement");
+    }
 
     count++;
-    delay(1000);
+    delay(100);
 }
 
 /**
