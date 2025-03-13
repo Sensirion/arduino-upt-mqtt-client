@@ -97,7 +97,6 @@ To connect to mqtt over ssl, update the following configurations:
 #### LWT, QoS, ...
 More advanced configuration options are available and can be found in the API. The options currently implemented are: 
 - Last Will & Testament (LWT) message and topic
-- MQTT Event Loop Size
 - Quality-of-Service (QOS) 
 - Retain Flag
 

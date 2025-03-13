@@ -13,8 +13,6 @@ const uint8_t ssl_cert[] =
     "------BEGIN CERTIFICATE-----\n" MQTT_BROKER_CERTIFICATE_OVERRIDE
     "\n-----END CERTIFICATE-----";
 
-const uint8_t DEFAULT_MQTT_EVENT_LOOP_SIZE = 20;
-
 
 MqttMailingService::MqttMailingService() {
     mState = MqttMailingServiceState::UNINITIALIZED;
@@ -26,7 +24,6 @@ MqttMailingService::MqttMailingService() {
     mUseSsl = false;
     mQos = 0;
     mRetainFlag = 0;
-    mMqttEventLoopSize = DEFAULT_MQTT_EVENT_LOOP_SIZE;
 }
 
 MqttMailingService::~MqttMailingService() {
@@ -148,11 +145,6 @@ MqttMailingService::setLWTMessage(const char* lwtMessage) {
     }
     strncpy(mLwtMessage, lwtMessage, 255);
 }
-
-__attribute__((unused)) void 
-    MqttMailingService::setMqttEventLoopSize(int loopSize) {
-        mMqttEventLoopSize = loopSize;
-    }
 
 __attribute__((unused)) void
 MqttMailingService::setSslCertificate(const char* sslCert) {

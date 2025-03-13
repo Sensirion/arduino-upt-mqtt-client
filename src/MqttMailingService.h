@@ -116,16 +116,6 @@ class __attribute__((unused)) MqttMailingService {
      */
     __attribute__((unused)) void setLWTMessage(const char* msg);
 
-
-    /**
-     * @brief Set size of MQTT event queue size.
-     * 
-     * @note needs to be called before start()
-     *
-     * @param queueSize: the chosen size for event queue as integer, default is 20.
-     */
-    __attribute__((unused)) void setMqttEventLoopSize(int queueSize);
-
     /**
      * @brief Set the Ssl Certificate of the MQTT broker and enables SSL
      *
@@ -246,7 +236,6 @@ class __attribute__((unused)) MqttMailingService {
     const char* mSslCert;
     int mQos;
     int mRetainFlag;
-    int mMqttEventLoopSize;
     char mGlobalTopicPrefix[MQTT_TOPIC_PREFIX_MAX_LENGTH] = "";
     TaskHandle_t mWifiCheckTaskHandle = nullptr;
     // Pointer to formatting function
