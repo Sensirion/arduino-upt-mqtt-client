@@ -4,7 +4,7 @@ Arduino library for publishing UPT `Measurements` to an MQTT broker.
 It offers conveninence method to publish UPT Measurements while simplifying the interface to the ESP-IDF mqtt_client library.
 Optionally it can handle Wi-Fi connectivity.
 
-> It is not yet available through library managers.
+> **Not working in Arduino IDE** because of a mismatch in `arduino-esp32` versions.
 
 
 ## Getting started
@@ -20,8 +20,9 @@ We recommend using the [PlatformIO VSCode extension](https://platformio.org/plat
 You will find more instructions [here](documentation/platformio_usage.md)
 
 #### Arduino IDE
-It is also possible to use the application using *Arduino IDE*.
-You will find more instructions [here](documentation/arduino_ide_usage.md)
+It currently not possible to use this library with Arduino IDE.  
+
+Since the used `arduino-esp32` is 3+ (based on ESP-IDF 5+) which introduced breaking changes and is unavailable for PlatformIO.
 
 ### Usage examples
 Two example scripts are available in the `examples` folder:
@@ -41,6 +42,9 @@ This library uses the following dependencies.
 
 * [Arduino ESP32](https://docs.espressif.com/projects/arduino-esp32/en/latest/getting_started.html#about-arduino-esp32)
 (In particular, the [Wi-Fi library](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/wifi.html),
-[message logging](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/log.html) and
-[MQTT client](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/mqtt.html#api-reference)) \
+[message logging](https://docs.espressif.com/projects/esp-idf/en/v4.4.7/esp32/api-reference/system/log.html) and
+[MQTT client](https://docs.espressif.com/projects/esp-idf/en/v4.4.7/esp32/api-reference/protocols/mqtt.html#api-reference))
+
 * [Sensirion UPT Core](https://github.com/Sensirion/arduino-upt-core)
+
+__Caution__: The version of ESP-IDF used by PlatformIO is v4.4.7 ! Not 5.x.x ... 
