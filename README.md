@@ -1,4 +1,5 @@
 # Sensirion UPT MQTT Client
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/sensirion/library/Sensirion%20UPT%20MQTT%20Client.svg)](https://registry.platformio.org/libraries/sensirion/Sensirion%20UPT%20MQTT%20Client)
 
 Arduino library for publishing UPT `Measurements` to an MQTT broker.   
 It offers conveninence method to publish UPT Measurements while simplifying the interface to the ESP-IDF mqtt_client library.
