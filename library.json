@@ -1,0 +1,27 @@
+{
+    "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
+    "name": "Sensirion UPT MQTT Client",
+    "version": "0.1.0",
+    "description": "A conveninence library to simplify sending UPT Measurements to an MQTT broker",
+    "keywords": "upt,sensirion,mqtt",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Sensirion/arduino-upt-mqtt-client.git"
+    },
+    "authors": [
+        {
+            "name": "Maximilian Paulsen"
+        },
+        {
+            "name": "Sensirion AG",
+            "url": "https://sensirion.com/forms/support-contact",
+            "maintainer": true
+        }
+    ],
+    "license": "BSD-3-Clause",
+    "platforms": "espressif32",
+    "headers": "MqttMailingService.h",
+    "dependencies": {
+        "sensirion/Sensirion UPT Core": "^0.5.1"
+    }
+}
