@@ -10,14 +10,14 @@ MqttMailingService mqttMailingService;
 int count = 0;
 
 // Configuration
-const char* ssid = "ap-name";
-const char* password = "ap-pass.";
-const char* broker_uri = "mqtt://mqtt.yourserver.com:1883";
-const char ssl_cert[] =
+constexpr const auto ssid = "ap-name";
+constexpr const auto password = "ap-pass.";
+constexpr const auto broker_uri = "mqtt://mqtt.yourserver.com:1883";
+constexpr const auto ssl_cert =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
 
-Measurement getSampleMeasurement();
-Measurement dummyMeasurement = getSampleMeasurement();
+sensirion::upt::core::Measurement getSampleMeasurement();
+sensirion::upt::core::Measurement dummyMeasurement = getSampleMeasurement();
 
 void setup() {
     Serial.begin(115200);
@@ -64,13 +64,12 @@ void loop() {
 /**
  * Returns a dummy measurement filled with realistic data combination
  */
-Measurement getSampleMeasurement(){
-    Measurement m;
-    m.dataPoint.t_offset = 0;
-    m.dataPoint.value = 100.0;
-    m.signalType = SignalType::CO2_PARTS_PER_MILLION;
-    m.metaData.deviceID = 932780134865341212;
-    m.metaData.deviceType.sensorType = SensorType::SCD4X;
-    m.metaData.platform = DevicePlatform::WIRED;
+sensirion::upt::core::Measurement getSampleMeasurement(){
+    sensirion::upt::core::MetaData meta{sensirion::upt::core::SensorType::SCD4X()};
+    meta.deviceID = 932780134865341212;
+    sensirion::upt::core::Measurement m{meta, 
+        sensirion::upt::core::SignalType::CO2_PARTS_PER_MILLION, 
+        sensirion::upt::core::DataPoint{0, 100.0}
+    };
     return m;
 }
