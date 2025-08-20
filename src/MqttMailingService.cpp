@@ -9,7 +9,7 @@
 const char* TAG = "MQTT Mail";
 esp_mqtt_client_handle_t MqttMailingService::mEspMqttClient = nullptr;
 
-const uint8_t ssl_cert[] =
+constexpr uint8_t ssl_cert[] =
     "------BEGIN CERTIFICATE-----\n" MQTT_BROKER_CERTIFICATE_OVERRIDE
     "\n-----END CERTIFICATE-----";
 
@@ -198,11 +198,11 @@ __attribute__((unused)) bool MqttMailingService::isReady() {
     return getServiceState() == MqttMailingServiceState::CONNECTED;
 }
 
-void MqttMailingService::setMeasurementMessageFormatterFn(void (*fFmt)(Measurement, char*)) {
+void MqttMailingService::setMeasurementMessageFormatterFn(void (*fFmt)(const sensirion::upt::core::Measurement&, char*)) {
     mMeasurementFormatterFn = fFmt;
 }
 
-void MqttMailingService::setMeasurementToTopicSuffixFn(void (*fFmt)(Measurement, char*)) {
+void MqttMailingService::setMeasurementToTopicSuffixFn(void (*fFmt)(const sensirion::upt::core::Measurement&, char*)) {
     mTopicSuffixFn = fFmt;
 }
 
@@ -226,7 +226,7 @@ bool MqttMailingService::sendTextMessage(const char* message,
     return fwdMqttMessage(topic, message);
 }
 
-bool MqttMailingService::sendMeasurement(const Measurement measurement, const char* topicSuffix) {
+bool MqttMailingService::sendMeasurement(const sensirion::upt::core::Measurement measurement, const char* topicSuffix) {
     if (mMeasurementFormatterFn == nullptr){
         ESP_LOGE(TAG, "Formatter not set, message not sent");
         return false;
@@ -236,7 +236,7 @@ bool MqttMailingService::sendMeasurement(const Measurement measurement, const ch
     return sendTextMessage(msgBuffer,topicSuffix);
 }
 
-bool MqttMailingService::sendMeasurement(const Measurement measurement) {
+bool MqttMailingService::sendMeasurement(const sensirion::upt::core::Measurement measurement) {
     if (mTopicSuffixFn == nullptr){
         ESP_LOGE(TAG, "TopicSuffixFunction is not set, message not sent");
         return false;

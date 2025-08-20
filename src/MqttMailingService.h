@@ -184,14 +184,14 @@ class __attribute__((unused)) MqttMailingService {
      *
      * @param fFmt: the function formatting a Measurement into a string
      */
-    __attribute__((unused)) void setMeasurementMessageFormatterFn(void (*fFmt)(Measurement, char*));
+    __attribute__((unused)) void setMeasurementMessageFormatterFn(void (*fFmt)(const sensirion::upt::core::Measurement&, char*));
 
     /**
      * @brief Set the function used to define the topic suffix from the Measurement
      *
      * @param fFmt: the function transforming a Measurement into a topic suffix
      */
-    __attribute__((unused)) void setMeasurementToTopicSuffixFn(void (*fFmt)(Measurement, char*));
+    __attribute__((unused)) void setMeasurementToTopicSuffixFn(void (*fFmt)(const sensirion::upt::core::Measurement&, char*));
 
     /**
      * @brief Send a message to a given topic.
@@ -213,7 +213,7 @@ class __attribute__((unused)) MqttMailingService {
      * 
      * @return true is message was successfully sent
      */
-    __attribute__((unused)) bool sendMeasurement(const Measurement measurement, const char* topicSuffix);
+    __attribute__((unused)) bool sendMeasurement(const sensirion::upt::core::Measurement measurement, const char* topicSuffix);
 
     /**
      * @brief Send a measurement to a topic defined using the registered function.
@@ -225,7 +225,7 @@ class __attribute__((unused)) MqttMailingService {
      * 
      * @return true is message was successfully sent
      */
-    __attribute__((unused)) bool sendMeasurement(const Measurement measurement);
+    __attribute__((unused)) bool sendMeasurement(const sensirion::upt::core::Measurement measurement);
 
   private:
     MqttMailingServiceState mState;
@@ -239,8 +239,8 @@ class __attribute__((unused)) MqttMailingService {
     char mGlobalTopicPrefix[MQTT_TOPIC_PREFIX_MAX_LENGTH] = "";
     TaskHandle_t mWifiCheckTaskHandle = nullptr;
     // Pointer to formatting function
-    void (*mMeasurementFormatterFn)(Measurement, char*) = nullptr;
-    void (*mTopicSuffixFn)(Measurement, char*) = nullptr;
+    void (*mMeasurementFormatterFn)(const sensirion::upt::core::Measurement&, char*) = nullptr;
+    void (*mTopicSuffixFn)(const sensirion::upt::core::Measurement&, char*) = nullptr;
 
     // ESP MQTT client
     static esp_mqtt_client_handle_t mEspMqttClient;
