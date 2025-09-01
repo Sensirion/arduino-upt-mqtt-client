@@ -65,7 +65,7 @@ void loop() {
  * Returns a dummy measurement filled with realistic data combination
  */
 sensirion::upt::core::Measurement getSampleMeasurement(){
-    sensirion::upt::core::MetaData meta{sensirion::upt::core::SensorType::SCD4X()};
+    sensirion::upt::core::MetaData meta{sensirion::upt::core::SCD4X()};
     meta.deviceID = 932780134865341212;
     sensirion::upt::core::Measurement m{meta, 
         sensirion::upt::core::SignalType::CO2_PARTS_PER_MILLION, 
