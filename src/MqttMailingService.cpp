@@ -1,6 +1,8 @@
 #include "MqttMailingService.h"
 #include <WiFi.h>
 
+namespace sensirion::upt::mqtt{
+
 #ifndef WIFI_CHECK_INTERVAL_MS
 #define WIFI_CHECK_INTERVAL_MS 10000
 #endif
@@ -9,22 +11,20 @@
 const char* TAG = "MQTT Mail";
 esp_mqtt_client_handle_t MqttMailingService::mEspMqttClient = nullptr;
 
-constexpr uint8_t ssl_cert[] =
+constexpr auto ssl_cert =
     "------BEGIN CERTIFICATE-----\n" MQTT_BROKER_CERTIFICATE_OVERRIDE
     "\n-----END CERTIFICATE-----";
 
 
-MqttMailingService::MqttMailingService() {
-    mState = MqttMailingServiceState::UNINITIALIZED;
-    // Apply default parameters
-    mBrokerFullURI[0] = '\0';
-    strncpy(mLwtTopic, "defaultTopic/", 127);
-    strncpy(mLwtMessage, "The MQTT Mailman unexpectedly disconnected.", 255);
-    mSslCert = "";
-    mUseSsl = false;
-    mQos = 0;
-    mRetainFlag = 0;
-}
+MqttMailingService::MqttMailingService():  
+    mState{MqttMailingServiceState::UNINITIALIZED},
+    mBrokerFullURI{0}, 
+    mLwtTopic{"defaultTopic/"},
+    mLwtMessage{"The MQTT Mailman unexpectedly disconnected."},
+    mSslCert{""},
+    mUseSsl{false},
+    mQos{0},
+    mRetainFlag{0} {}
 
 MqttMailingService::~MqttMailingService() {
     destroyEspMqttClient();
@@ -43,7 +43,7 @@ void MqttMailingService::start() {
     startEspMqttClient();
 }
 
-__attribute__((unused)) void
+[[maybe_unused]] void
 MqttMailingService::startWithDelegatedWiFi(const char* ssid, const char* pass,
                                            const bool shouldBeBlocking) {
 
@@ -80,97 +80,61 @@ MqttMailingService::startWithDelegatedWiFi(const char* ssid, const char* pass,
     }
 }
 
-__attribute__((unused)) void
+[[maybe_unused]] void
 MqttMailingService::startWithDelegatedWiFi(const char* ssid, const char* pass) {
     startWithDelegatedWiFi(ssid, pass, false);
 }
 
-__attribute__((unused)) void MqttMailingService::startWithDelegatedWiFi() {
+[[maybe_unused]] void MqttMailingService::startWithDelegatedWiFi() {
     startWithDelegatedWiFi(WIFI_SSID_OVERRIDE, WIFI_PW_OVERRIDE, false);
 }
 
-__attribute__((unused)) bool
-MqttMailingService::setBrokerURI(const char* brokerURI) {
-    if (strlen(brokerURI) > MAX_URI_LENGTH) {
-        ESP_LOGW(TAG,
-                 "Error: requested broker URI \"%s\" is too long: %i "
-                 "characters (max %i).",
-                 brokerURI, strlen(brokerURI), MAX_URI_LENGTH);
-        return false;
-    }
-    strncpy(mBrokerFullURI, brokerURI, MAX_URI_LENGTH); 
+[[maybe_unused]] bool
+MqttMailingService::setBrokerURI(std::string&& brokerURI) {
+    mBrokerFullURI = brokerURI;
     return true;
 }
 
-__attribute__((unused)) bool MqttMailingService::setBroker(const char* brokerDomain, const bool hasSsl) {
-        const int maxDomainLength = MAX_URI_LENGTH - 8 - 5;
-        if (strlen(brokerDomain) > maxDomainLength) {
-            ESP_LOGW(TAG,
-                "Error: requested broker Domain \"%s\" is too long: %i "
-                 "characters (max %i).",
-                brokerDomain, strlen(brokerDomain), maxDomainLength);
-            return false;
-        }
-        
-        if(hasSsl) {
-            strcpy(mBrokerFullURI, "mqtts://");
-            strcat(mBrokerFullURI, brokerDomain);
-            strcat(mBrokerFullURI, ":8883");
-        } else {
-            strcpy(mBrokerFullURI, "mqtt://");
-            strcat(mBrokerFullURI, brokerDomain);
-            strcat(mBrokerFullURI, ":1883");
-        }
-        return true;
+[[maybe_unused]] bool MqttMailingService::setBroker(std::string&& brokerDomain, const bool hasSsl) {
+    std::string protocol{"mqtt://"};
+    std::string port{":1883"};
+    if (hasSsl){
+        protocol = "mqtts://";
+        port = ":8883";
     }
-
-__attribute__((unused)) void
-MqttMailingService::setLWTTopic(const char* lwtTopic) {
-    if (strlen(lwtTopic) > 128) {
-        ESP_LOGW(TAG,
-                 "Warning: requested LWT topic \"%s\" is too long: %i "
-                 "characters (max %i). It got truncated.",
-                 lwtTopic, strlen(lwtTopic), 128);
-    }
-    strncpy(mLwtTopic, lwtTopic, 127);
+    mBrokerFullURI = protocol + brokerDomain + port;
+    return true;
 }
 
-__attribute__((unused)) void
-MqttMailingService::setLWTMessage(const char* lwtMessage) {
-    if (strlen(lwtMessage) > 256) {
-        ESP_LOGW(TAG,
-                 "Warning: requested LWT message \"%s\" is too long: %i "
-                 "characters (max %i). It got truncated.",
-                 lwtMessage, strlen(lwtMessage), 256);
-    }
-    strncpy(mLwtMessage, lwtMessage, 255);
+[[maybe_unused]] void
+MqttMailingService::setLWTTopic(std::string&& lwtTopic) {
+    mLwtTopic = lwtTopic;
 }
 
-__attribute__((unused)) void
-MqttMailingService::setSslCertificate(const char* sslCert) {
+[[maybe_unused]] void
+MqttMailingService::setLWTMessage(std::string&& lwtMessage) {
+    mLwtMessage = lwtMessage;
+}
+
+[[maybe_unused]] void
+MqttMailingService::setSslCertificate(std::string&& sslCert) {
     mSslCert = sslCert;
     mUseSsl = true;
 }
 
-__attribute__((unused)) void
+[[maybe_unused]] void
 MqttMailingService::enableSsl() {
-    mSslCert = (char*)ssl_cert;
+    mSslCert = ssl_cert;
     mUseSsl = true;
 }
 
-__attribute__((unused)) void MqttMailingService::setQOS(int qos) {
+[[maybe_unused]] void MqttMailingService::setQOS(int qos) {
     mQos = qos;
 }
 
-__attribute__((unused)) void
-MqttMailingService::setGlobalTopicPrefix(const char* topicPrefix) {
-    if (strlen(topicPrefix) > 128) {
-        ESP_LOGW(TAG,
-                 "Warning: requested global prefix message \"%s\" is too long: %i "
-                 "characters (max %i). It got truncated.",
-                 topicPrefix, strlen(topicPrefix), 128);
-    }
-    strncpy(mGlobalTopicPrefix, topicPrefix, 127);
+[[maybe_unused]] void
+MqttMailingService::setGlobalTopicPrefix(std::string&& topicPrefix) {
+    mGlobalTopicPrefix = topicPrefix;
 }
 
 void MqttMailingService::setRetainFlag(int retainFlag) {
@@ -185,12 +149,12 @@ void MqttMailingService::setRetainFlag(int retainFlag) {
     }
 }
 
-__attribute__((unused)) MqttMailingServiceState
+[[maybe_unused]] MqttMailingServiceState
 MqttMailingService::getServiceState() {
     return mState;
 }
 
-__attribute__((unused)) bool MqttMailingService::isReady() {
+[[maybe_unused]] bool MqttMailingService::isReady() {
     if (mShouldManageWifiConnection) {
         return WiFi.isConnected() &&
                getServiceState() == MqttMailingServiceState::CONNECTED;
@@ -198,11 +162,11 @@ __attribute__((unused)) bool MqttMailingService::isReady() {
     return getServiceState() == MqttMailingServiceState::CONNECTED;
 }
 
-void MqttMailingService::setMeasurementMessageFormatterFn(void (*fFmt)(const sensirion::upt::core::Measurement&, char*)) {
+void MqttMailingService::setMeasurementMessageFormatterFn(MeasurementFormatterType fFmt) {
     mMeasurementFormatterFn = fFmt;
 }
 
-void MqttMailingService::setMeasurementToTopicSuffixFn(void (*fFmt)(const sensirion::upt::core::Measurement&, char*)) {
+void MqttMailingService::setMeasurementToTopicSuffixFn(MeasurementFormatterType fFmt) {
     mTopicSuffixFn = fFmt;
 }
 
@@ -211,40 +175,34 @@ bool MqttMailingService::fwdMqttMessage(const char* topic, const char* message){
     return esp_mqtt_client_publish(mEspMqttClient, topic, message, 0, mQos, mRetainFlag) != -1;
 }
 
-bool MqttMailingService::sendTextMessage(const char* message,
-                                        const char* topicSuffix) {
-    if (strlen(topicSuffix) > MQTT_TOPIC_SUFFIX_MAX_LENGTH) {
-        ESP_LOGW(TAG,"topicSuffix \"%s\" is too long, message not sent",topicSuffix);
-        return false;
-    }
+[[maybe_unused]]
+bool MqttMailingService::sendTextMessage(const std::string& message,
+                                         const std::string& topicSuffix) {
 
-    // Assemble topic: prefix + suffix
-    char topic[MQTT_TOPIC_PREFIX_MAX_LENGTH + MQTT_TOPIC_SUFFIX_MAX_LENGTH];
-    strcpy(topic, mGlobalTopicPrefix);
-    strcat(topic, topicSuffix);
 
-    return fwdMqttMessage(topic, message);
+    const auto topic{mGlobalTopicPrefix + topicSuffix};                                        
+    return fwdMqttMessage(topic.c_str(), message.c_str());
 }
 
-bool MqttMailingService::sendMeasurement(const sensirion::upt::core::Measurement measurement, const char* topicSuffix) {
-    if (mMeasurementFormatterFn == nullptr){
+bool MqttMailingService::sendMeasurement(const sensirion::upt::core::Measurement measurement, 
+                                         const std::string& topicSuffix) {
+    if (!mMeasurementFormatterFn){
         ESP_LOGE(TAG, "Formatter not set, message not sent");
         return false;
     }
-    char msgBuffer[MQTT_MEASUREMENT_MESSAGE_MAX_LENGTH]; 
-    mMeasurementFormatterFn(measurement, msgBuffer);
-    return sendTextMessage(msgBuffer,topicSuffix);
+    auto message = mMeasurementFormatterFn(measurement);
+    return sendTextMessage(message, topicSuffix);
 }
 
 bool MqttMailingService::sendMeasurement(const sensirion::upt::core::Measurement measurement) {
-    if (mTopicSuffixFn == nullptr){
+    if (!mTopicSuffixFn){
         ESP_LOGE(TAG, "TopicSuffixFunction is not set, message not sent");
         return false;
     }
-    char topicSuffix[MQTT_TOPIC_SUFFIX_MAX_LENGTH]; 
-    mTopicSuffixFn(measurement, topicSuffix);
+    
+    auto suffix = mTopicSuffixFn(measurement);
 
-    return sendMeasurement(measurement,topicSuffix);
+    return sendMeasurement(measurement, suffix);
 }
 
 /*
@@ -252,13 +210,14 @@ bool MqttMailingService::sendMeasurement(const sensirion::upt::core::Measurement
  */
 
 void MqttMailingService::initEspMqttClient() {
-    esp_mqtt_client_config_t mqtt_cfg = {.uri = mBrokerFullURI,
-                                         .lwt_topic = mLwtTopic,
-                                         .lwt_msg = mLwtMessage,
+    esp_mqtt_client_config_t mqtt_cfg = {.uri = mBrokerFullURI.data(),
+                                         .lwt_topic = mLwtTopic.data(),
+                                         .lwt_msg = mLwtMessage.data(),
                                          .disable_auto_reconnect = false};
     if (mUseSsl) {
-        mqtt_cfg.cert_pem = mSslCert;
+        mqtt_cfg.cert_pem = mSslCert.c_str();
     }
+
     mEspMqttClient = esp_mqtt_client_init(&mqtt_cfg);
     if (!mEspMqttClient) {
         ESP_LOGE(TAG, "Fatal error: Could not initiate MQTT Client. Aborting.");
@@ -300,7 +259,8 @@ void MqttMailingService::destroyEspMqttClient() {
 }
 
 void MqttMailingService::espMqttEventHandler(
-    void* handler_args, __attribute__((unused)) esp_event_base_t base,
+    void* handler_args, 
+    [[maybe_unused]] esp_event_base_t base,
     int32_t event_id, void* event_data) {
     auto* pMailingService = reinterpret_cast<MqttMailingService*>(handler_args);
     auto event = reinterpret_cast<esp_mqtt_event_handle_t>(event_data);
@@ -329,7 +289,8 @@ void MqttMailingService::espMqttEventHandler(
  * This tasks checks if Wi-Fi is still connected every 10 second
  * and tries to reconnect if Wi-Fi connection is not established.
  */
-void MqttMailingService::wifiCheckTaskCode(__attribute__((unused)) void* arg) {
+void MqttMailingService::wifiCheckTaskCode(
+    [[maybe_unused]] void* arg) {
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(WIFI_CHECK_INTERVAL_MS));
 
@@ -338,3 +299,5 @@ void MqttMailingService::wifiCheckTaskCode(__attribute__((unused)) void* arg) {
         }
     }
 }
+} // end namespace
+
