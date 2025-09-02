@@ -1,18 +1,19 @@
 #include "MqttMailingService.h"
 #include <Arduino.h>
-#include <MeasurementFormatting.cpp>
+#include <MeasurementFormatting.hpp>
 
 /*
     In this usage example, the MqttMailingService is managing the Wi-Fi itself.
 */
+using namespace sensirion::upt;
 
-MqttMailingService mqttMailingService;
+mqtt::MqttMailingService mqttMailingService;
 int count = 0;
 
 // Configuration
-constexpr const auto ssid = "ap-name";
-constexpr const auto password = "ap-pass.";
-constexpr const auto broker_uri = "mqtt://mqtt.yourserver.com:1883";
+constexpr auto ssid = "ap-name";
+constexpr auto password = "ap-pass.";
+constexpr auto broker_uri = "mqtt://mqtt.yourserver.com:1883";
 constexpr const auto ssl_cert =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
 
@@ -32,10 +33,10 @@ void setup() {
     // mqttMailingService.setSslCertificate(ssl_cert);
 
     // Set a formatting function to be able to send Measurements
-    mqttMailingService.setMeasurementMessageFormatterFn(&defaultMeasurementToMessage);
+    mqttMailingService.setMeasurementMessageFormatterFn(mqtt::DefaultMeasurementFormatter{});
 
     // [Optional] Set a function to automatically define the topic based on passed Measurement
-    mqttMailingService.setMeasurementToTopicSuffixFn(&defaultMeasurementToTopicSuffix);
+    mqttMailingService.setMeasurementToTopicSuffixFn(mqtt::DefaultMeasurmentToTopicSuffix{});
 
     Serial.println("MQTT Mailing Service starting and connecting ....");
 
@@ -65,7 +66,7 @@ void loop() {
  * Returns a dummy measurement filled with realistic data combination
  */
 sensirion::upt::core::Measurement getSampleMeasurement(){
-    sensirion::upt::core::MetaData meta{sensirion::upt::core::SensorType::SCD4X()};
+    sensirion::upt::core::MetaData meta{sensirion::upt::core::SCD4X()};
     meta.deviceID = 932780134865341212;
     sensirion::upt::core::Measurement m{meta, 
         sensirion::upt::core::SignalType::CO2_PARTS_PER_MILLION, 

@@ -6,11 +6,9 @@
 #include <Arduino.h>
 #include <Sensirion_UPT_Core.h>
 
-// MQTT Message sizes
-#define MQTT_TOPIC_SUFFIX_MAX_LENGTH 128
-#define MQTT_TOPIC_PREFIX_MAX_LENGTH 128
+namespace sensirion::upt::mqtt{
 
-#define MQTT_MEASUREMENT_MESSAGE_MAX_LENGTH 128
+using MeasurementFormatterType = std::function<std::string(const sensirion::upt::core::Measurement&)>;
 
 enum MqttMailingServiceState {
     UNINITIALIZED = 0,
@@ -21,12 +19,14 @@ enum MqttMailingServiceState {
 };
 
 /* Class managing MQTT message dispatch. Optionally manages Wi-Fi connection. */
-class __attribute__((unused)) MqttMailingService {
+class MqttMailingService {
   public:
-    static const uint8_t MAX_URI_LENGTH = 63;
 
     MqttMailingService();
     ~MqttMailingService();
+
+    // we must not copy the MqttMailingService
+    const MqttMailingService& operator()(MqttMailingService&&) = delete;
 
     /**
      * @brief Starts the MqttMailingService
@@ -46,7 +46,7 @@ class __attribute__((unused)) MqttMailingService {
      * @param should_be_blocking: Specify if the call should be blocking until
      * connection is established with broker
      */
-    __attribute__((unused)) void
+    [[maybe_unused]] void
     startWithDelegatedWiFi(const char* ssid, const char* pass,
                            const bool shouldBeBlocking);
 
@@ -59,7 +59,7 @@ class __attribute__((unused)) MqttMailingService {
      * @param pass: the password of the WiFi AP
      *
      */
-    __attribute__((unused)) void startWithDelegatedWiFi(const char* ssid,
+    [[maybe_unused]] void startWithDelegatedWiFi(const char* ssid,
                                                         const char* pass);
 
     /**
@@ -68,7 +68,7 @@ class __attribute__((unused)) MqttMailingService {
      *        WIFI_SSID_OVERRIDE and WIFI_PW_OVERRIDE to configure the
      *        Wi-Fi ssid and password.
      */
-    __attribute__((unused)) void startWithDelegatedWiFi();
+    [[maybe_unused]] void startWithDelegatedWiFi();
 
     /**
      * @brief Sets the broker URI used to send the MQTT messages.
@@ -78,7 +78,7 @@ class __attribute__((unused)) MqttMailingService {
      * @param uri: The chosen broker URI (e.g. mqtt://mybroker.com:1883), max 63 characters long
      * @return True if broker URI is set successfuly, False if provided uri is too long
      */
-    __attribute__((unused)) bool setBrokerURI(const char* uri);
+    [[maybe_unused]] bool setBrokerURI(std::string&& uri);
 
     /**
      * @brief Sets the broker URI used to send the MQTT messages.
@@ -94,8 +94,8 @@ class __attribute__((unused)) MqttMailingService {
      * @param hasSsl: True if your broker uses SSL, False otherwise 
      * @return True if broker URI is set successfuly, False if provided brokerDomain is too long
      */
-    __attribute__((unused)) bool setBroker(const char* brokerDomain, 
-                                           const bool hasSsl);
+    [[maybe_unused]] bool setBroker(std::string&& brokerDomain, 
+                                    const bool hasSsl);
 
 
     /**
@@ -105,7 +105,7 @@ class __attribute__((unused)) MqttMailingService {
      *
      * @param topic: The chosen LWT topic
      */
-    __attribute__((unused)) void setLWTTopic(const char* topic);
+    [[maybe_unused]] void setLWTTopic(std::string&& topic);
 
     /**
      * @brief Sets the Last Will Testament (LWT) message.
@@ -114,7 +114,7 @@ class __attribute__((unused)) MqttMailingService {
      *
      * @param topic: The chosen LWT message
      */
-    __attribute__((unused)) void setLWTMessage(const char* msg);
+    [[maybe_unused]] void setLWTMessage(std::string&& msg);
 
     /**
      * @brief Set the Ssl Certificate of the MQTT broker and enables SSL
@@ -124,7 +124,7 @@ class __attribute__((unused)) MqttMailingService {
      *
      * @param sslCert: The root certificate of the MQTT broker.
      */
-    __attribute__((unused)) void setSslCertificate(const char* sslCert);
+    [[maybe_unused]] void setSslCertificate(std::string&& sslCert);
 
         /**
      * @brief Enable Ssl and set the Ssl Certificate of the MQTT broker
@@ -134,7 +134,7 @@ class __attribute__((unused)) MqttMailingService {
      *       the callee.
      *
      */
-    __attribute__((unused)) void enableSsl();
+    [[maybe_unused]] void enableSsl();
 
 
     /**
@@ -142,7 +142,7 @@ class __attribute__((unused)) MqttMailingService {
      *
      * @param qos: chosen QoS as integer
      */
-    __attribute__((unused)) void setQOS(int qos);
+    [[maybe_unused]] void setQOS(int qos);
 
     /**
      * @brief Set the topic prefix that will automatically be added to all sent messages.
@@ -152,46 +152,46 @@ class __attribute__((unused)) MqttMailingService {
      *
      * @param topicPrefix: chosen topic prefix string
      */
-    __attribute__((unused)) void setGlobalTopicPrefix(const char* topicPrefix);
+    [[maybe_unused]] void setGlobalTopicPrefix(std::string&& topicPrefix);
 
     /**
      * @brief Set the retain flag for the sent MQTT messages
      *
      * @param flag: the chosen flag as integer
      */
-    __attribute__((unused)) void setRetainFlag(int flag);
+    [[maybe_unused]] void setRetainFlag(int flag);
 
     /**
      * @brief returns the QueueHandle_t to the mailbox
      *
      * @note: The mailbox is only available once initialized
      */
-    __attribute__((unused)) QueueHandle_t getMailbox() const;
+    [[maybe_unused]] QueueHandle_t getMailbox() const;
 
     /**
      * @brief returns the state of the service
      */
-    __attribute__((unused)) MqttMailingServiceState getServiceState();
+    [[maybe_unused]] MqttMailingServiceState getServiceState();
 
     /**
      * @brief returns whether the service has successfully established
      * a connection and is ready to forward messages to the broker
      */
-    __attribute__((unused)) bool isReady();
+    [[maybe_unused]] bool isReady();
 
     /**
      * @brief Set a measurement formatting function
      *
      * @param fFmt: the function formatting a Measurement into a string
      */
-    __attribute__((unused)) void setMeasurementMessageFormatterFn(void (*fFmt)(const sensirion::upt::core::Measurement&, char*));
+    [[maybe_unused]] void setMeasurementMessageFormatterFn(MeasurementFormatterType formatterFunction);
 
     /**
      * @brief Set the function used to define the topic suffix from the Measurement
      *
      * @param fFmt: the function transforming a Measurement into a topic suffix
      */
-    __attribute__((unused)) void setMeasurementToTopicSuffixFn(void (*fFmt)(const sensirion::upt::core::Measurement&, char*));
+    [[maybe_unused]] void setMeasurementToTopicSuffixFn(MeasurementFormatterType formatterFunction);
 
     /**
      * @brief Send a message to a given topic.
@@ -201,7 +201,7 @@ class __attribute__((unused)) MqttMailingService {
      * 
      * @return true is message was successfully sent
      */
-    __attribute__((unused)) bool sendTextMessage(const char* message, const char* topicSuffix);
+    [[maybe_unused]] bool sendTextMessage(const std::string& message, const std::string& topicSuffix);
 
     /**
      * @brief Send a measurement to a given topic.
@@ -213,7 +213,7 @@ class __attribute__((unused)) MqttMailingService {
      * 
      * @return true is message was successfully sent
      */
-    __attribute__((unused)) bool sendMeasurement(const sensirion::upt::core::Measurement measurement, const char* topicSuffix);
+    [[maybe_unused]] bool sendMeasurement(const core::Measurement measurement, const std::string& topicSuffix);
 
     /**
      * @brief Send a measurement to a topic defined using the registered function.
@@ -225,22 +225,22 @@ class __attribute__((unused)) MqttMailingService {
      * 
      * @return true is message was successfully sent
      */
-    __attribute__((unused)) bool sendMeasurement(const sensirion::upt::core::Measurement measurement);
+    [[maybe_unused]] bool sendMeasurement(const sensirion::upt::core::Measurement measurement);
 
   private:
     MqttMailingServiceState mState;
-    char mBrokerFullURI[MAX_URI_LENGTH + 1]{};
-    char mLwtTopic[128]{};
-    char mLwtMessage[256]{};
+    std::string mBrokerFullURI{};
+    std::string mLwtTopic{};
+    std::string mLwtMessage{};
     bool mUseSsl;
-    const char* mSslCert;
+    std::string mSslCert{};
     int mQos;
     int mRetainFlag;
-    char mGlobalTopicPrefix[MQTT_TOPIC_PREFIX_MAX_LENGTH] = "";
+    std::string mGlobalTopicPrefix{};
     TaskHandle_t mWifiCheckTaskHandle = nullptr;
     // Pointer to formatting function
-    void (*mMeasurementFormatterFn)(const sensirion::upt::core::Measurement&, char*) = nullptr;
-    void (*mTopicSuffixFn)(const sensirion::upt::core::Measurement&, char*) = nullptr;
+    MeasurementFormatterType mMeasurementFormatterFn{};
+    MeasurementFormatterType mTopicSuffixFn{};
 
     // ESP MQTT client
     static esp_mqtt_client_handle_t mEspMqttClient;
@@ -261,5 +261,6 @@ class __attribute__((unused)) MqttMailingService {
                          __attribute__((unused)) esp_event_base_t base,
                          int32_t event_id, void* event_data);
 };
+} // end namespace
 
 #endif /* UPT_MQTT_MAILING_SERVICE_H */

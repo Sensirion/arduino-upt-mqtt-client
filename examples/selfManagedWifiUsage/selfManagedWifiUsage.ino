@@ -1,7 +1,9 @@
 #include "MqttMailingService.h"
 #include <Arduino.h>
 #include <WiFi.h>
-#include <MeasurementFormatting.cpp>
+#include <MeasurementFormatting.hpp>
+
+using namespace sensirion::upt::mqtt;
 
 /*
     In this usage example, the main application is managing the Wi-Fi connection
@@ -15,7 +17,7 @@ int count = 0;
 // Configuration
 constexpr auto ssid = "ap-name";
 constexpr auto password = "ap-pass.";
-constexpr auto broker_uri = "mqtt://mqtt.someserver.com:1883";
+constexpr auto broker_uri = "mqtt://mqtt.yourserver.com:1883";
 
 const char ssl_cert[] =
     "------BEGIN CERTIFICATE-----\nmy-certificate\n-----END CERTIFICATE-----";
@@ -36,10 +38,10 @@ void setup() {
     // mqttMailingService.setSslCertificate(ssl_cert);
 
     // Set a formatting function to be able to send Measurements
-    mqttMailingService.setMeasurementMessageFormatterFn(&defaultMeasurementToMessage);
+    mqttMailingService.setMeasurementMessageFormatterFn(DefaultMeasurementFormatter{});
 
     // [Optional] Set a function to automatically define the topic based on passed Measurement
-    mqttMailingService.setMeasurementToTopicSuffixFn(&defaultMeasurementToTopicSuffix);
+    mqttMailingService.setMeasurementToTopicSuffixFn(DefaultMeasurmentToTopicSuffix{});
 
     // Connect to Wi-Fi
     WiFi.begin(ssid, password);
@@ -73,7 +75,7 @@ void loop() {
  * Returns a dummy measurement filled with realistic data combination
  */
 sensirion::upt::core::Measurement getSampleMeasurement(){
-    sensirion::upt::core::MetaData meta{sensirion::upt::core::SensorType::SCD4X()};
+    sensirion::upt::core::MetaData meta{sensirion::upt::core::SCD4X()};
     meta.deviceID = 932780134865341212;
     sensirion::upt::core::Measurement m{meta, 
         sensirion::upt::core::SignalType::CO2_PARTS_PER_MILLION, 
