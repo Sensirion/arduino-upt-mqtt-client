@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 0.2.1
+## 0.3.0
+### Changed
+- Moved to stable UPT Core 1.0.0
 
-- Updates to make it compile with arduino upt core 0.9
+## 0.2.1
+### Changed
+- Refactor for compilation with arduino UPT core 0.9
 
 ## 0.1.0
 
