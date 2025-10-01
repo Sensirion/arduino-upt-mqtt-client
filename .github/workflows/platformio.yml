@@ -12,28 +12,24 @@ on:
 
 jobs:
   PlatformIO-Check:
+    name: PIO - Checks
     uses: sensirion/.github/.github/workflows/upt.platformio.check.yml@main
     with:
       pio-environment-list: '["selfManagedWifiUsage", "delegatedWifiUsage"]'
 
   PlatformIO-Build:
+    name: PIO - Build
     uses: sensirion/.github/.github/workflows/upt.platformio.build.yml@main
     needs: PlatformIO-Check
     with:
       pio-environment-list: '["selfManagedWifiUsage", "delegatedWifiUsage"]'
 
-  PlatformIO-Package:
-    if: ${{ (github.ref_type != 'tag') && (github.ref_name == 'master') }}
+  PlatformIO-PackageAndPublish:
+    name: PIO - Package and Publish on Tag
+    if: ${{ (github.ref_type == 'tag') || (github.ref_name == 'main') }}
     needs: PlatformIO-Build
     uses: sensirion/.github/.github/workflows/upt.platformio.publish.yml@main
     with:
-      should-publish: false
-
-  PlatformIO-Publish:
-    uses: sensirion/.github/.github/workflows/upt.platformio.publish.yml@main
-    if: github.ref_type == 'tag'
-    needs: PlatformIO-Build
-    with:
-      should-publish: true
+      should-publish: ${{ github.ref_type == 'tag' }}
     secrets:
       pio-registry-token: ${{ secrets.PIO_MKTSW_TOKEN }}
