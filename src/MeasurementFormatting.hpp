@@ -30,13 +30,13 @@ namespace sensirion::upt::mqtt
             stream << m.dataPoint.value;
             stream << ", \"device_id\":";
             stream << m.metaData.deviceID;
-            stream << ", \"device_type\":";
+            stream << ", \"device_type\":\"";
             stream << m.metaData.deviceType;
-            stream << ", \"signal\":";
+            stream << "\", \"signal\":\"";
             stream << quantityOf(m.signalType);
-            stream << ", \"signal_unit\":";
+            stream << "\", \"signal_unit\":\"";
             stream << unitOf(m.signalType);
-            stream << "}";
+            stream << "\"}";
             return stream.str();
         }
     };
