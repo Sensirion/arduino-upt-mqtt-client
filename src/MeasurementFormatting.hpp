@@ -19,7 +19,7 @@ namespace sensirion::upt::mqtt
         }
     };
 
-    struct DefaultMeasurmentToTopicSuffix{
+    struct DefaultMeasurementToTopicSuffix{
         std::string operator() (const sensirion::upt::core::Measurement& m){
             
             std::stringstream stream{};
