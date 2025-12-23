@@ -51,5 +51,16 @@ namespace sensirion::upt::mqtt
             return stream.str();
         }
     };
+    
+    struct MeasurementToTopicSuffixTree{
+        std::string operator() (const sensirion::upt::core::Measurement& m){
+            
+            std::stringstream stream{};
+            stream << core::deviceLabel(m.metaData.deviceType); 
+            stream << "/" << m.metaData.deviceID 
+                   << "/" << sensirion::upt::core::quantityOf(m.signalType);
+            return stream.str();
+        }
+    };
 
 } // end namespace
