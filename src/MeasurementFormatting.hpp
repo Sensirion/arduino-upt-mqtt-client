@@ -63,4 +63,10 @@ namespace sensirion::upt::mqtt
         }
     };
 
+    struct MeasurementToTopicSuffixEmpty{
+        std::string operator() (const sensirion::upt::core::Measurement& m){
+            return "";
+        }
+    };
+
 } // end namespace
