@@ -41,7 +41,7 @@ void setup() {
     mqttMailingService.setMeasurementMessageFormatterFn(DefaultMeasurementFormatter{});
 
     // [Optional] Set a function to automatically define the topic based on passed Measurement
-    mqttMailingService.setMeasurementToTopicSuffixFn(DefaultMeasurmentToTopicSuffix{});
+    mqttMailingService.setMeasurementToTopicSuffixFn(DefaultMeasurementToTopicSuffix{});
 
     // Connect to Wi-Fi
     WiFi.begin(ssid, password);

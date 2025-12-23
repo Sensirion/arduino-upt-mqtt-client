@@ -36,7 +36,7 @@ void setup() {
     mqttMailingService.setMeasurementMessageFormatterFn(mqtt::DefaultMeasurementFormatter{});
 
     // [Optional] Set a function to automatically define the topic based on passed Measurement
-    mqttMailingService.setMeasurementToTopicSuffixFn(mqtt::DefaultMeasurmentToTopicSuffix{});
+    mqttMailingService.setMeasurementToTopicSuffixFn(mqtt::DefaultMeasurementToTopicSuffix{});
 
     Serial.println("MQTT Mailing Service starting and connecting ....");
 
